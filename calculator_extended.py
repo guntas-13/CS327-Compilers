@@ -371,22 +371,9 @@ def parse(s: str) -> AST:
                 
                 consume(KeyWordToken, "in")
                 call = parse_func()
+                print(call)
                 consume(KeyWordToken, "end")
                 return LetFun(Variable(func_name.varName), args, body, call)
-            
-            case FunCallToken(_):
-                fn_name = consume(FunCallToken).funName
-                consume(OperatorToken, "(")
-                args = []
-                if peek() != OperatorToken(")"):
-                    while True:
-                        args.append(parse_let())
-                        if peek() == OperatorToken(","):
-                            consume(OperatorToken, ",")
-                        else:
-                            break
-                consume(OperatorToken, ")")
-                return CallFun(Variable(fn_name), args)
             
             case _:
                 return parse_let()
@@ -489,6 +476,20 @@ def parse(s: str) -> AST:
             case VariableToken(varName):
                 consume()
                 return Variable(varName)
+            
+            case FunCallToken(_):
+                fn_name = consume(FunCallToken).funName
+                consume(OperatorToken, "(")
+                args = []
+                if peek() != OperatorToken(")"):
+                    while True:
+                        args.append(parse_let())
+                        if peek() == OperatorToken(","):
+                            consume(OperatorToken, ",")
+                        else:
+                            break
+                consume(OperatorToken, ")")
+                return CallFun(Variable(fn_name), args)
             
             case OperatorToken('-'):
                 consume()
@@ -617,6 +618,35 @@ letFunc fact(n)
 }
 in
 fact(5)
+end
+"""
+
+# Fixed this -> added CallFun at the highest precedence in parse_atom()
+exp = """
+letFunc f(a)
+{
+    a + a
+}
+in
+f(2) + f(3)
+end
+"""
+
+exp = """
+let x := 5 in
+letFunc f(y) {
+    x
+} 
+in
+letFunc g(z) { 
+    let x := 6 
+    in f(z)
+    end
+}
+in
+g(0)
+end
+end
 end
 """
 
