@@ -680,26 +680,25 @@ end
 end
 """
 
-# exp = """
-# letFunc g()
-# {
-#     let x := 5 in
-#     letFunc f()
-#     {
-#         let x := 6 in
-#         x
-#         end
-#     }
-#     in
-#     f()
-#     end
-#     x
-#     end
-# }
-# in
-# g()
-# end
-# """
+exp = """
+letFunc g()
+{
+    let x := 5 in
+    letFunc f()
+    {
+        let x := 6 in
+        x
+        end
+    }
+    in
+    f()
+    end
+    end
+}
+in
+g()
+end
+"""
 
 # Wanted something like this -> but need print statement
 # def g():
