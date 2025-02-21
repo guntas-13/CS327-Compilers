@@ -52,7 +52,14 @@ def lex(s: str) -> Iterator[Token]:
             yield SpecialToken(char)
             i += 1
             continue
-
+        
+        # comments as // are allowed
+        if char == '/' and i + 1 < len(s) and s[i + 1] == '/':
+            i += 2
+            while i < len(s) and s[i] != '\n':
+                i += 1
+            continue
+        
         if char == '"':
             i += 1
             start = i
@@ -105,7 +112,14 @@ def lex(s: str) -> Iterator[Token]:
         if char.isdigit() or (char == '-' and i + 1 < len(s) and s[i + 1].isdigit()):
             start = i
             i += 1
-            while i < len(s) and (s[i].isdigit() or s[i] in '.eE+-'):
+            while i < len(s) and (s[i].isdigit() or s[i] in '.eE+_-'):
+                # underscores as number separators are allowed
+                if s[i] == '_':
+                    if i + 1 < len(s) and s[i + 1].isdigit():
+                        i += 1
+                        continue
+                    else:
+                        raise ValueError("Number cannot have consecutive underscores or end with an underscore")
                 i += 1
             num_str = s[start:i]
             yield NumberToken(num_str)

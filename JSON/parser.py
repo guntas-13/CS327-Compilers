@@ -71,15 +71,18 @@ def parse(s: str) -> AST:
             
             case TrueToken():
                 consume(TrueToken)
-                return True
+                # return True
+                return "true"
             
             case FalseToken():
                 consume(FalseToken)
-                return False
+                # return False
+                return "false"
             
             case NullToken():
                 consume(NullToken)
-                return None
+                # return None
+                return "null"
             
             case _:
                 raise ValueError(f"Unexpected token at index {i}: {token}")
@@ -100,6 +103,10 @@ def parse(s: str) -> AST:
                     match peek():
                         case SpecialToken(','):
                             consume(SpecialToken, ',')
+                            # trailing commas are now allowed!
+                            if peek() == SpecialToken('}'):
+                                consume(SpecialToken, '}')
+                                return JSONObject(members)
                 case _:
                     raise ValueError(f"Expected ',' or '}}' at index {i}, but got {token}")
         
@@ -117,7 +124,16 @@ def parse(s: str) -> AST:
                         elts.append(parse_value())
                     else:
                         consume(SpecialToken, ',')
+                        # trailing commas are now allowed!
+                        if peek() == SpecialToken(']'):
+                            consume(SpecialToken, ']')
+                            return JSONArray(elts)
                         elts.append(parse_value())
         
+    result = parse_value()
     
-    return parse_value()
+    # check for trailing tokens even after a valid file
+    if peek() is not None:
+        raise ValueError(f"Unexpected token after parsing complete at index {i}: {peek()}")
+    
+    return result
