@@ -712,6 +712,19 @@ end
 
 # g()
 
+# exp = """
+# letFunc f() {
+#     6
+# }
+# in letFunc f(x) {
+#     x + 3
+# }
+# in -f(f())
+# end
+# end
+# """
+# error as function overloading based on # of args missing
+
 for t in lex(exp):
     print(t)
 
