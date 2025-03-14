@@ -74,6 +74,345 @@ class CallFun(AST):
 class FunObj:
     params: List[AST]
     body: AST
+    
+@dataclass
+class Statements(AST):
+    stmts: List[AST]
+    
+@dataclass
+class PrintStmt(AST):
+    expr: AST
+    
+@dataclass
+class ReturnStmt(AST):
+    expr: AST
+
+class ParseErr(Exception):
+    pass
+
+@dataclass
+class StringLiteral(AST):
+    val: str
+             
+class Token:
+    pass
+
+@dataclass
+class NumberToken(Token):
+    val: str
+
+@dataclass
+class OperatorToken(Token):
+    op: str
+    
+@dataclass
+class KeyWordToken(Token):
+    op: str
+    
+@dataclass
+class VariableToken(Token):
+    varName: str
+
+@dataclass
+class FunCallToken(Token):
+    funName: str
+
+
+def lex(s: str) -> Iterator[Token]:
+    i = 0
+    prev_token = None
+
+    while True:
+        while i < len(s) and s[i].isspace():
+            i += 1
+
+        if i >= len(s):
+            return
+
+        if s[i].isalpha():
+            start = i
+            while i < len(s) and s[i].isalpha():
+                i += 1
+            name = s[start:i]
+
+            if name in {"if", "then", "else", "end", "let", "in", "letFunc", "print", "return"}:
+                prev_token = KeyWordToken(name)
+                yield prev_token
+
+            # If preceded by `letFunc`, it's a function definition
+            elif isinstance(prev_token, KeyWordToken) and prev_token.op == "letFunc":
+                prev_token = VariableToken(name)
+                yield prev_token
+
+            # If followed by '(', it's a function call
+            elif i < len(s) and s[i] == "(":
+                prev_token = FunCallToken(name)
+                yield prev_token
+
+            else:
+                prev_token = VariableToken(name)
+                yield prev_token
+
+        elif s[i].isdigit():
+            start = i
+            while i < len(s) and (s[i].isdigit() or s[i] == '.'):
+                i += 1
+            prev_token = NumberToken(s[start:i])
+            yield prev_token
+
+        else:
+            if s[i:i+2] in {"<=", ">=", "!=", "||", "&&"}:
+                prev_token = OperatorToken(s[i:i+2])
+                yield prev_token
+                i += 2
+            elif s[i:i+2] == ":=":
+                prev_token = KeyWordToken(":=")
+                yield prev_token
+                i += 2
+            else:
+                match s[i]:
+                    case '+' | '*' | '/' | '^' | '-' | '(' | ')' | '<' | '>' | '=' | '%' | '\u221a' | "," | "{" | "}" | ";":
+                        prev_token = OperatorToken(s[i])
+                        yield prev_token
+                        i += 1
+                    case _:
+                        raise ParseErr(f"Unexpected character: {s[i]} at position {i}")
+
+      
+def parse(s: str) -> AST:
+    t = peekable(lex(s))
+    i = 0
+    
+    def consume(expected_type=None, expected_value=None):
+        nonlocal i
+        token = next(t, None)
+        if token is None:
+            raise ParseErr(f"Unexpected end of input at index {i}")
+        if expected_type and not isinstance(token, expected_type):
+            raise ParseErr(f"Expected {expected_type.__name__} at index {i}, got {type(token).__name__}")
+        if expected_value:
+            actual_value = getattr(token, "op", None) or getattr(token, "varName", None) or getattr(token, "val", None)
+            if actual_value != expected_value:
+                raise ParseErr(f"Expected '{expected_value}' at index {i}, got '{actual_value}'")
+        i += 1
+        return token
+    
+    def peek():
+        return t.peek(None)
+    
+    def parse_program():
+        declerations = []
+        while peek() is not None:
+            decl = parse_decleration()
+            declerations.append(decl)
+            # if peek() == OperatorToken(";"):
+            #     consume(OperatorToken, ";")
+            # else:
+            #     break
+        return Statements(declerations) if len(declerations) > 1 else declerations[0] if declerations else None
+    
+    def parse_decleration():
+        match peek():
+            case KeyWordToken("let"):
+                return parse_let()
+            case KeyWordToken("letFunc"):
+                return parse_func()
+            case _:
+                return parse_statement()
+            
+    def parse_func():
+        consume(KeyWordToken, "letFunc")
+        func_name = consume(VariableToken)
+        
+        consume(OperatorToken, "(")
+        args = []
+        if peek() != OperatorToken(")"):
+            while True:
+                # args.append(parse_expression())
+                args.append(Variable(consume(VariableToken).varName)) # <- seems ok, will see later
+                if peek() == OperatorToken(","):
+                    consume(OperatorToken, ",")
+                else:
+                    break
+        consume(OperatorToken, ")")
+        
+        consume(OperatorToken, "{")
+        body = parse_decleration()
+        consume(OperatorToken, "}")
+        
+        # body = parse_block()
+        
+        consume(KeyWordToken, "in")
+        call = parse_decleration()
+        # print(call)
+        # optional "end"
+        if peek() == KeyWordToken("end"):
+            consume(KeyWordToken, "end")
+        return LetFun(Variable(func_name.varName), args, body, call)
+    
+    def parse_let():
+        consume(KeyWordToken, "let")
+        var = Variable(consume(VariableToken).varName)
+        consume(KeyWordToken, ":=")
+        e1 = parse_expression()
+        # consume(KeyWordToken, "in")
+        consume(OperatorToken, ";")
+        e2 = parse_program()
+        
+        # another optional "end"
+        if peek() == KeyWordToken("end"):
+            consume(KeyWordToken, "end")
+        return Let(var, e1, e2)
+    
+    def parse_statement():
+        match peek():
+            case KeyWordToken("if"):
+                return parse_if()
+            case KeyWordToken("print"):
+                consume(KeyWordToken, "print")
+                consume(OperatorToken, "(")
+                expr = parse_expression()
+                # print(f"Here in parse_statement!-> {expr}")
+                consume(OperatorToken, ")")
+                consume(OperatorToken, ";")
+                return PrintStmt(expr)
+            case KeyWordToken("return"):
+                consume(KeyWordToken, "return")
+                expr = parse_expression()
+                consume(OperatorToken, ";")
+                return ReturnStmt(expr)
+            case OperatorToken("{"):
+                return parse_block()
+            case _:
+                expr = parse_expression()
+                consume(OperatorToken, ";")
+                return expr
+        
+    def parse_if():
+        consume(KeyWordToken, "if")
+        # condition = parse_func()
+        condition = parse_expression()
+        consume(KeyWordToken, "then")
+        then_body = parse_statement()
+        consume(KeyWordToken, "else")
+        else_body = parse_statement()
+        return If(condition, then_body, else_body)
+    
+    def parse_block():
+        consume(OperatorToken, "{")
+        stmts = []
+        while peek() != OperatorToken("}"):
+            stmts.append(parse_decleration())
+        consume(OperatorToken, "}")
+        return Statements(stmts) if len(stmts) > 1 else stmts[0] if stmts else None
+    
+    def parse_expression():
+        return parse_bool()
+    
+    def parse_bool():
+        ast = parse_comparison()
+        while True:
+            match peek():
+                case OperatorToken("||"):
+                    consume()
+                    ast = BinOp("||", ast, parse_comparison())
+                case OperatorToken("&&"):
+                    consume()
+                    ast = BinOp("&&", ast, parse_comparison())
+                case _:
+                    return ast
+
+    def parse_comparison():
+        ast = parse_add()
+        match peek():
+            case OperatorToken(op) if op in {"<", ">", "<=", ">=", "=", "!="}:
+                consume()
+                return BinOp(op, ast, parse_add())
+            case _:
+                return ast
+    
+    def parse_add():
+        ast = parse_mul()
+        while True:
+            match peek():
+                case OperatorToken('+'):
+                    consume()
+                    ast = BinOp('+', ast, parse_mul())
+                case OperatorToken('-'):
+                    consume()
+                    ast = BinOp('-', ast, parse_mul())
+                case OperatorToken("%"):
+                    consume()
+                    ast = BinOp("%", ast, parse_mul())
+                case _:
+                    return ast
+ 
+    def parse_mul():
+        ast = parse_exponentiation()
+        while True:
+            match peek():
+                case OperatorToken('*'):
+                    consume()
+                    ast = BinOp("*", ast, parse_exponentiation())
+                case OperatorToken('/'):
+                    consume()
+                    ast = BinOp("/", ast, parse_exponentiation())
+                case _:
+                    return ast
+    
+    def parse_exponentiation():
+        ast = parse_atom()
+        while True:
+            match peek():
+                case OperatorToken('^'):
+                    consume()
+                    ast = BinOp("^", ast, parse_exponentiation())
+                case _:
+                    return ast
+
+    def parse_atom():
+        match peek():
+            case NumberToken(v):
+                consume()
+                val = float(v) if '.' in v else int(v)
+                return Number(val)
+            
+            case VariableToken(varName):
+                consume()
+                return Variable(varName)
+            
+            case FunCallToken(_):
+                fn_name = consume(FunCallToken).funName
+                consume(OperatorToken, "(")
+                args = []
+                if peek() != OperatorToken(")"):
+                    while True:
+                        args.append(parse_expression())
+                        if peek() == OperatorToken(","):
+                            consume(OperatorToken, ",")
+                        else:
+                            break
+                consume(OperatorToken, ")")
+                return CallFun(Variable(fn_name), args)
+            
+            case OperatorToken('-'):
+                consume()
+                return UnOp("-", parse_atom())
+            
+            case OperatorToken('\u221a'):
+                consume()
+                return UnOp("\u221a", parse_atom())
+            
+            case OperatorToken("("):
+                consume()
+                ast = parse_expression()
+                consume(OperatorToken, ")")
+                return ast
+            case _:
+                raise ParseErr(f"Unexpected token at index {i}")
+
+    return parse_program()
+
 
 class Environment:
     envs: List
@@ -161,6 +500,11 @@ def resolve(program: AST, env: Environment = None) -> AST:
             ri = resolve_(right)
             return If(op, le, ri)
         
+        case Statements(stmts):
+            return Statements([resolve_(stmt) for stmt in stmts])
+        
+        case PrintStmt(expr):
+            return PrintStmt(resolve_(expr))
 
 
 def e(tree: AST, env: Environment = None) -> int | float | bool:
@@ -209,6 +553,16 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             rbody = e_(fun.body)
             env.exit_scope()
             return rbody
+        
+        case Statements(stmts):
+            res = None
+            for stmt in stmts:
+                res = e_(stmt)
+                # e_(stmt)
+            return res
+        
+        case PrintStmt(expr):
+            print(e_(expr))
             
         case BinOp("+", left, right): return e_(left) + e_(right)
         case BinOp("*", left, right): return e_(left) * e_(right)
@@ -233,282 +587,6 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
                 return e_(then_body) 
             else:
                 return e_(else_body)
-
-
-class ParseErr(Exception):
-    pass
-
-@dataclass
-class StringLiteral(AST):
-    val: str
-             
-class Token:
-    pass
-
-@dataclass
-class NumberToken(Token):
-    val: str
-
-@dataclass
-class OperatorToken(Token):
-    op: str
-    
-@dataclass
-class KeyWordToken(Token):
-    op: str
-    
-@dataclass
-class VariableToken(Token):
-    varName: str
-
-@dataclass
-class FunCallToken(Token):
-    funName: str
-
-
-def lex(s: str) -> Iterator[Token]:
-    i = 0
-    prev_token = None
-
-    while True:
-        while i < len(s) and s[i].isspace():
-            i += 1
-
-        if i >= len(s):
-            return
-
-        if s[i].isalpha():
-            start = i
-            while i < len(s) and s[i].isalpha():
-                i += 1
-            name = s[start:i]
-
-            if name in {"if", "then", "else", "end", "let", "in", "letFunc"}:
-                prev_token = KeyWordToken(name)
-                yield prev_token
-
-            # If preceded by `letFunc`, it's a function definition
-            elif isinstance(prev_token, KeyWordToken) and prev_token.op == "letFunc":
-                prev_token = VariableToken(name)
-                yield prev_token
-
-            # If followed by '(', it's a function call
-            elif i < len(s) and s[i] == "(":
-                prev_token = FunCallToken(name)
-                yield prev_token
-
-            else:
-                prev_token = VariableToken(name)
-                yield prev_token
-
-        elif s[i].isdigit():
-            start = i
-            while i < len(s) and (s[i].isdigit() or s[i] == '.'):
-                i += 1
-            prev_token = NumberToken(s[start:i])
-            yield prev_token
-
-        else:
-            if s[i:i+2] in {"<=", ">=", "!=", "||", "&&"}:
-                prev_token = OperatorToken(s[i:i+2])
-                yield prev_token
-                i += 2
-            elif s[i:i+2] == ":=":
-                prev_token = KeyWordToken(":=")
-                yield prev_token
-                i += 2
-            else:
-                match s[i]:
-                    case '+' | '*' | '/' | '^' | '-' | '(' | ')' | '<' | '>' | '=' | '%' | '\u221a' | "," | "{" | "}":
-                        prev_token = OperatorToken(s[i])
-                        yield prev_token
-                        i += 1
-                    case _:
-                        raise ParseErr(f"Unexpected character: {s[i]} at position {i}")
-
-      
-def parse(s: str) -> AST:
-    t = peekable(lex(s))
-    i = 0
-    
-    def consume(expected_type=None, expected_value=None):
-        nonlocal i
-        token = next(t, None)
-        if token is None:
-            raise ParseErr(f"Unexpected end of input at index {i}")
-        if expected_type and not isinstance(token, expected_type):
-            raise ParseErr(f"Expected {expected_type.__name__} at index {i}, got {type(token).__name__}")
-        if expected_value:
-            actual_value = getattr(token, "op", None) or getattr(token, "varName", None) or getattr(token, "val", None)
-            if actual_value != expected_value:
-                raise ParseErr(f"Expected '{expected_value}' at index {i}, got '{actual_value}'")
-        i += 1
-        return token
-    
-    def peek():
-        return t.peek(None)
-    
-    def parse_func():
-        match peek():
-            case KeyWordToken("letFunc"):
-                consume(KeyWordToken, "letFunc")
-                func_name = consume(VariableToken)
-                
-                consume(OperatorToken, "(")
-                args = []
-                if peek() != OperatorToken(")"):
-                    while True:
-                        args.append(parse_let())
-                        if peek() == OperatorToken(","):
-                            consume(OperatorToken, ",")
-                        else:
-                            break
-                consume(OperatorToken, ")")
-                
-                consume(OperatorToken, "{")
-                body = parse_func()
-                consume(OperatorToken, "}")
-                
-                consume(KeyWordToken, "in")
-                call = parse_func()
-                print(call)
-                consume(KeyWordToken, "end")
-                return LetFun(Variable(func_name.varName), args, body, call)
-            
-            case _:
-                return parse_let()
-              
-    def parse_let():
-        match peek():
-            case KeyWordToken("let"):
-                consume(KeyWordToken, "let")
-                var = Variable(consume(VariableToken).varName)
-                consume(KeyWordToken, ":=")
-                e1 = parse_func()
-                consume(KeyWordToken, "in")
-                e2 = parse_func()
-                consume(KeyWordToken, "end")
-                return Let(var, e1, e2)
-            case _:
-                return parse_if()
-        
-    def parse_if():
-        match peek():
-            case KeyWordToken("if"):
-                consume(KeyWordToken, "if")
-                condition = parse_func()
-                consume(KeyWordToken, "then")
-                then_body = parse_func()
-                consume(KeyWordToken, "else")
-                else_body = parse_func()
-                return If(condition, then_body, else_body)
-            case _:
-                return parse_bool()
-    
-    def parse_bool():
-        ast = parse_comparison()
-        while True:
-            match peek():
-                case OperatorToken("||"):
-                    consume()
-                    ast = BinOp("||", ast, parse_comparison())
-                case OperatorToken("&&"):
-                    consume()
-                    ast = BinOp("&&", ast, parse_comparison())
-                case _:
-                    return ast
-
-    def parse_comparison():
-        ast = parse_add()
-        match peek():
-            case OperatorToken(op) if op in {"<", ">", "<=", ">=", "=", "!="}:
-                consume()
-                return BinOp(op, ast, parse_add())
-            case _:
-                return ast
-    
-    def parse_add():
-        ast = parse_mul()
-        while True:
-            match peek():
-                case OperatorToken('+'):
-                    consume()
-                    ast = BinOp('+', ast, parse_mul())
-                case OperatorToken('-'):
-                    consume()
-                    ast = BinOp('-', ast, parse_mul())
-                case OperatorToken("%"):
-                    consume()
-                    ast = BinOp("%", ast, parse_mul())
-                case _:
-                    return ast
- 
-    def parse_mul():
-        ast = parse_exponentiation()
-        while True:
-            match peek():
-                case OperatorToken('*'):
-                    consume()
-                    ast = BinOp("*", ast, parse_exponentiation())
-                case OperatorToken('/'):
-                    consume()
-                    ast = BinOp("/", ast, parse_exponentiation())
-                case _:
-                    return ast
-    
-    def parse_exponentiation():
-        ast = parse_atom()
-        while True:
-            match peek():
-                case OperatorToken('^'):
-                    consume()
-                    ast = BinOp("^", ast, parse_exponentiation())
-                case _:
-                    return ast
-
-    def parse_atom():
-        match peek():
-            case NumberToken(v):
-                consume()
-                val = float(v) if '.' in v else int(v)
-                return Number(val)
-            
-            case VariableToken(varName):
-                consume()
-                return Variable(varName)
-            
-            case FunCallToken(_):
-                fn_name = consume(FunCallToken).funName
-                consume(OperatorToken, "(")
-                args = []
-                if peek() != OperatorToken(")"):
-                    while True:
-                        args.append(parse_let())
-                        if peek() == OperatorToken(","):
-                            consume(OperatorToken, ",")
-                        else:
-                            break
-                consume(OperatorToken, ")")
-                return CallFun(Variable(fn_name), args)
-            
-            case OperatorToken('-'):
-                consume()
-                return UnOp("-", parse_atom())
-            
-            case OperatorToken('\u221a'):
-                consume()
-                return UnOp("\u221a", parse_atom())
-            
-            case OperatorToken("("):
-                consume()
-                ast = parse_add()
-                consume(OperatorToken, ")")
-                return ast
-            case _:
-                raise ParseErr(f"Unexpected token at index {i}")
-
-    return parse_func()
-
 
 
 exp = Let(Variable("a"), Number("3"),
@@ -725,9 +803,61 @@ end
 # """
 # error as function overloading based on # of args missing
 
+exp = """
+let x := 6 in
+{
+print(x);
+print(3 * x - 3);
+}
+end
+"""
+
+exp = """
+letFunc fact(n)
+{
+    if n = 0 then
+        1;
+    else
+        n * fact(n - 1);
+}
+in
+fact(5);
+end
+"""
+
+exp = """
+letFunc g() 
+{
+    let x := 5 in
+    {
+        letFunc f()
+        {
+            let x := 6 in
+            print(x);
+        }
+        in
+        f();
+        print(x);
+    }
+}
+in
+g();
+"""
+
+exp = """
+let x := 6;
+let y := 3 * x - 3;
+print(x);
+print(y);
+x;
+"""
+
+print(exp)
+print()
+
 for t in lex(exp):
     print(t)
-
+print()
 pprint(parse(exp))
 print()
 rexp = resolve(parse(exp))
