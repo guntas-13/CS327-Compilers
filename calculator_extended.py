@@ -3,7 +3,7 @@ from collections.abc import Iterator
 from more_itertools import peekable
 from pprint import pprint
 from graphviz import Digraph # type: ignore
-from typing import List
+from typing import List, Optional
 import sys
 
 sys.setrecursionlimit(10000)
@@ -85,7 +85,11 @@ class PrintStmt(AST):
     
 @dataclass
 class ReturnStmt(AST):
-    expr: AST
+    expr: Optional[AST]
+    
+@dataclass
+class Program(AST):
+    decls: List[AST]
 
 class ParseErr(Exception):
     pass
@@ -200,23 +204,21 @@ def parse(s: str) -> AST:
     def peek():
         return t.peek(None)
     
-    def parse_program():
-        declerations = []
-        while peek() is not None:
-            decl = parse_decleration()
-            declerations.append(decl)
-            # if peek() == OperatorToken(";"):
-            #     consume(OperatorToken, ";")
-            # else:
-            #     break
-        return Statements(declerations) if len(declerations) > 1 else declerations[0] if declerations else None
+    # def parse_program():
+    #     # declarations = []
+    #     # while peek() is not None:
+    #     #     decl = parse_declaration()
+    #     #     declarations.append(decl)
+    #     # return Program(declarations)
+    #     program = parse_declaration()
+    #     return program
     
-    def parse_decleration():
+    def parse_declaration():
         match peek():
-            case KeyWordToken("let"):
-                return parse_let()
             case KeyWordToken("letFunc"):
                 return parse_func()
+            case KeyWordToken("let"):
+                return parse_let()
             case _:
                 return parse_statement()
             
@@ -228,26 +230,18 @@ def parse(s: str) -> AST:
         args = []
         if peek() != OperatorToken(")"):
             while True:
-                # args.append(parse_expression())
-                args.append(Variable(consume(VariableToken).varName)) # <- seems ok, will see later
+                args.append(Variable(consume(VariableToken).varName)) # what else otherwise in the parameter list
                 if peek() == OperatorToken(","):
                     consume(OperatorToken, ",")
                 else:
                     break
         consume(OperatorToken, ")")
         
-        consume(OperatorToken, "{")
-        body = parse_decleration()
-        consume(OperatorToken, "}")
-        
-        # body = parse_block()
+        body = parse_block()
         
         consume(KeyWordToken, "in")
-        call = parse_decleration()
-        # print(call)
-        # optional "end"
-        if peek() == KeyWordToken("end"):
-            consume(KeyWordToken, "end")
+        call = parse_block()
+
         return LetFun(Variable(func_name.varName), args, body, call)
     
     def parse_let():
@@ -255,13 +249,9 @@ def parse(s: str) -> AST:
         var = Variable(consume(VariableToken).varName)
         consume(KeyWordToken, ":=")
         e1 = parse_expression()
-        # consume(KeyWordToken, "in")
-        consume(OperatorToken, ";")
-        e2 = parse_program()
-        
-        # another optional "end"
-        if peek() == KeyWordToken("end"):
-            consume(KeyWordToken, "end")
+        # consume(OperatorToken, ";")
+        consume(KeyWordToken, "in")
+        e2 = parse_block()
         return Let(var, e1, e2)
     
     def parse_statement():
@@ -272,13 +262,15 @@ def parse(s: str) -> AST:
                 consume(KeyWordToken, "print")
                 consume(OperatorToken, "(")
                 expr = parse_expression()
-                # print(f"Here in parse_statement!-> {expr}")
                 consume(OperatorToken, ")")
                 consume(OperatorToken, ";")
                 return PrintStmt(expr)
             case KeyWordToken("return"):
                 consume(KeyWordToken, "return")
-                expr = parse_expression()
+                if peek() != OperatorToken(";"):
+                    expr = parse_expression()
+                else:
+                    expr = None
                 consume(OperatorToken, ";")
                 return ReturnStmt(expr)
             case OperatorToken("{"):
@@ -290,7 +282,6 @@ def parse(s: str) -> AST:
         
     def parse_if():
         consume(KeyWordToken, "if")
-        # condition = parse_func()
         condition = parse_expression()
         consume(KeyWordToken, "then")
         then_body = parse_statement()
@@ -300,11 +291,12 @@ def parse(s: str) -> AST:
     
     def parse_block():
         consume(OperatorToken, "{")
-        stmts = []
+        decls = []
         while peek() != OperatorToken("}"):
-            stmts.append(parse_decleration())
+            decl = parse_declaration()
+            decls.append(decl)
         consume(OperatorToken, "}")
-        return Statements(stmts) if len(stmts) > 1 else stmts[0] if stmts else None
+        return Statements(decls) if len(decls) > 1 else decls[0] if decls else None
     
     def parse_expression():
         return parse_bool()
@@ -411,7 +403,7 @@ def parse(s: str) -> AST:
             case _:
                 raise ParseErr(f"Unexpected token at index {i}")
 
-    return parse_program()
+    return parse_declaration()
 
 
 class Environment:
@@ -505,6 +497,9 @@ def resolve(program: AST, env: Environment = None) -> AST:
         
         case PrintStmt(expr):
             return PrintStmt(resolve_(expr))
+        
+        case ReturnStmt(expr):
+            return ReturnStmt(resolve_(expr))
 
 
 def e(tree: AST, env: Environment = None) -> int | float | bool:
@@ -516,7 +511,6 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
     
     match tree:
         case Number(val):
-            # return float(val) if '.' in val else int(val)
             return val
         
         case Variable(varName, i): 
@@ -532,19 +526,14 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
         
         case LetFun(Variable(varName, i), params, body, expr):
             env.enter_scope()
-            # print(Variable(varName, i))
             env.add(f"{varName}:{i}", FunObj(params, body))
-            # print(env.envs)
             rexpr = e_(expr)
             env.exit_scope()
             return rexpr
         
         case CallFun(Variable(varName, i), args):
-            # print(Variable(varName, i))
             fun = env.get(f"{varName}:{i}")
-            rargs = []
-            for arg in args:
-                rargs.append(e_(arg))
+            rargs = [e_(arg) for arg in args]
             
             env.enter_scope()
             for param, arg in zip(fun.params, rargs):
@@ -558,11 +547,17 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             res = None
             for stmt in stmts:
                 res = e_(stmt)
-                # e_(stmt)
             return res
         
         case PrintStmt(expr):
             print(e_(expr))
+            return
+        
+        case ReturnStmt(expr):
+            if expr:
+                return e_(expr)
+            else:
+                return
             
         case BinOp("+", left, right): return e_(left) + e_(right)
         case BinOp("*", left, right): return e_(left) * e_(right)
@@ -580,7 +575,7 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
         case BinOp("&&", left, right): return e_(left) and e_(right)
         
         case UnOp("-", right): return -e_(right)
-        case UnOp("\u221a", right): return e_(right) ** 0.5 # Square root Symbol
+        case UnOp("\u221a", right): return e_(right) ** 0.5
         
         case If(condition, then_body, else_body): 
             if e_(condition):
@@ -849,14 +844,41 @@ let x := 6;
 let y := 3 * x - 3;
 print(x);
 print(y);
-x;
+
+letFunc f(x)
+{
+    let x := 5;
+    return x + 3;
+}
+in
+f(2);
+"""
+
+exp = """
+let x := 6 in {
+let y := 3 * x - 3 in {
+print(x);
+print(y);
+return;
+letFunc f(y)
+{
+    let x := 5 in {
+    return x + y;
+    }
+}
+in {
+print(f(2));
+print(f(3));
+}
+}
+}
 """
 
 print(exp)
 print()
 
-for t in lex(exp):
-    print(t)
+for i, t in enumerate(lex(exp)):
+    print(f"{i}: {t}")
 print()
 pprint(parse(exp))
 print()
