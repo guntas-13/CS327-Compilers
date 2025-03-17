@@ -41,8 +41,7 @@ class If(AST):
 @dataclass
 class Let(AST):
     var: AST
-    e1: AST
-    e2: AST
+    e1: Optional[AST]
     
 @dataclass
 class LetMut(AST):
@@ -63,7 +62,6 @@ class LetFun(AST):
     name: AST   # considering functions as first-class just like variables else it'll be str
     params: List[AST]
     body: AST
-    expr: AST
 
 @dataclass
 class CallFun(AST):
@@ -170,7 +168,7 @@ def lex(s: str) -> Iterator[Token]:
                 yield prev_token
                 i += 2
             elif s[i:i+2] == ":=":
-                prev_token = KeyWordToken(":=")
+                prev_token = OperatorToken(":=")
                 yield prev_token
                 i += 2
             else:
@@ -204,14 +202,11 @@ def parse(s: str) -> AST:
     def peek():
         return t.peek(None)
     
-    # def parse_program():
-    #     # declarations = []
-    #     # while peek() is not None:
-    #     #     decl = parse_declaration()
-    #     #     declarations.append(decl)
-    #     # return Program(declarations)
-    #     program = parse_declaration()
-    #     return program
+    def parse_program():
+        decls = []
+        while peek():
+            decls.append(parse_declaration())
+        return Program(decls)
     
     def parse_declaration():
         match peek():
@@ -238,21 +233,18 @@ def parse(s: str) -> AST:
         consume(OperatorToken, ")")
         
         body = parse_block()
-        
-        consume(KeyWordToken, "in")
-        call = parse_block()
 
-        return LetFun(Variable(func_name.varName), args, body, call)
+        return LetFun(Variable(func_name.varName), args, body)
     
     def parse_let():
         consume(KeyWordToken, "let")
         var = Variable(consume(VariableToken).varName)
-        consume(KeyWordToken, ":=")
-        e1 = parse_expression()
-        # consume(OperatorToken, ";")
-        consume(KeyWordToken, "in")
-        e2 = parse_block()
-        return Let(var, e1, e2)
+        e1 = None
+        if peek() == OperatorToken(":="):
+            consume(OperatorToken, ":=")
+            e1 = parse_expression()
+        consume(OperatorToken, ";")
+        return Let(var, e1)
     
     def parse_statement():
         match peek():
@@ -296,7 +288,7 @@ def parse(s: str) -> AST:
             decl = parse_declaration()
             decls.append(decl)
         consume(OperatorToken, "}")
-        return Statements(decls) if len(decls) > 1 else decls[0] if decls else None
+        return Statements(decls) if decls else Statements([])
     
     def parse_expression():
         return parse_bool()
@@ -403,7 +395,7 @@ def parse(s: str) -> AST:
             case _:
                 raise ParseErr(f"Unexpected token at index {i}")
 
-    return parse_declaration()
+    return parse_program()
 
 
 class Environment:
@@ -444,6 +436,10 @@ def resolve(program: AST, env: Environment = None) -> AST:
         return resolve(program, env)
 
     match program:
+        case Program(decls):
+            new_decls = [resolve_(decl) for decl in decls]
+            return Program(new_decls)
+        
         case Variable(varName, _):
             return Variable(varName, env.get(varName)) # This ask too! why sir did env.get(varName)
             # return env.get(varName)
@@ -451,16 +447,12 @@ def resolve(program: AST, env: Environment = None) -> AST:
         case Number(_) as N:
             return N
         
-        case Let(Variable(varName, _), e1, e2):
-            re1 = resolve_(e1)
-            env.enter_scope()
+        case Let(Variable(varName, _), e1):
+            re1 = resolve_(e1) if e1 else None
             env.add(varName, i := fresh())
-            re2 = resolve_(e2)
-            env.exit_scope()
-            return Let(Variable(varName, i), re1, re2)
+            return Let(Variable(varName, i), re1)
         
-        case LetFun(Variable(varName, _), params, body, expr):
-            env.enter_scope()
+        case LetFun(Variable(varName, _), params, body):
             env.add(varName, i := fresh())
             env.enter_scope()
             new_params = []
@@ -469,9 +461,7 @@ def resolve(program: AST, env: Environment = None) -> AST:
                 new_params.append(Variable(param.varName, j))
             new_body = resolve_(body)
             env.exit_scope()
-            new_expr = resolve_(expr)
-            env.exit_scope()
-            return LetFun(Variable(varName, i), new_params, new_body, new_expr)
+            return LetFun(Variable(varName, i), new_params, new_body)
         
         case CallFun(fn, args):
             rfn = resolve_(fn)
@@ -493,7 +483,10 @@ def resolve(program: AST, env: Environment = None) -> AST:
             return If(op, le, ri)
         
         case Statements(stmts):
-            return Statements([resolve_(stmt) for stmt in stmts])
+            env.enter_scope()
+            stmts = [resolve_(stmt) for stmt in stmts]
+            env.exit_scope()
+            return Statements(stmts)
         
         case PrintStmt(expr):
             return PrintStmt(resolve_(expr))
@@ -509,26 +502,26 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
         return e(tree, env)
     
     match tree:
+        case Program(decls):
+            res = None
+            for decl in decls:
+                res = e_(decl)
+            return res
+        
         case Number(val):
             return val
         
         case Variable(varName, i): 
             return env.get(f"{varName}:{i}")
         
-        case Let(Variable(varName, i), e1, e2):
-            v1 = e_(e1)
-            env.enter_scope()
+        case Let(Variable(varName, i), e1):
+            v1 = e_(e1) if e1 else None
             env.add(f"{varName}:{i}", v1)
-            v2 = e_(e2)
-            env.exit_scope()
-            return v2
+            return v1
         
-        case LetFun(Variable(varName, i), params, body, expr):
-            env.enter_scope()
+        case LetFun(Variable(varName, i), params, body):
             env.add(f"{varName}:{i}", FunObj(params, body))
-            rexpr = e_(expr)
-            env.exit_scope()
-            return rexpr
+            return None
         
         case CallFun(Variable(varName, i), args):
             fun = env.get(f"{varName}:{i}")
@@ -543,9 +536,11 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             return rbody
         
         case Statements(stmts):
+            env.enter_scope()
             res = None
             for stmt in stmts:
                 res = e_(stmt)
+            env.exit_scope()
             return res
         
         case PrintStmt(expr):
@@ -583,325 +578,34 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
                 return e_(else_body)
 
 
-exp = Let(Variable("a"), Number("3"),
-		Let(Variable("b"), BinOp("+", Variable("a"), Number("2")),
-		    BinOp("+", Variable("a"), Variable("b"))))
-
-# exp = Let(Variable("a"), Number("3"), BinOp("+", Variable("a"), Variable("a")))
-
-expL = "let a be 3 in let b be a + 2 in a + b end end"
-# expL = "let a be 3 in a + a end"
-
-exp = LetFun(Variable("f"), 
-             [Variable("x")], 
-             BinOp("+", Variable("x"), Number("1")), 
-             CallFun(Variable("f"), [Number("2")]))
-
-# letFunc f(x) be
-#     x + 1
-# in
-# f(2)
-
-exp = LetFun(Variable("fact"), 
-             [Variable("n")], 
-             If(BinOp("=", Variable("n"), Number("0")),
-                Number("1"),
-                Let(Variable("x"), 
-                    CallFun(Variable("fact"), [BinOp("-", Variable("n"), Number("1"))]), 
-                    BinOp("*", Variable("n"), Variable("x")))
-                ),
-             CallFun(Variable("fact"), [Number("5")]))
-
-
-## PROJECT EULER 1
-exp = LetFun(Variable("func"),
-             [Variable("x"), Variable("s")],
-             If(BinOp("=", Variable("x"), Number("1000")),
-                Variable("s"),
-                If(BinOp("||", BinOp("=", BinOp("%", Variable("x"), Number("3")), Number("0")), BinOp("=", BinOp("%", Variable("x"), Number("5")), Number("0"))),
-                   CallFun(Variable("func"), [BinOp("+", Variable("x"), Number("1")), BinOp("+", Variable("s"), Variable("x"))]),
-                   CallFun(Variable("func"), [BinOp("+", Variable("x"), Number("1")), Variable("s")])
-                   )
-                ),
-             CallFun(Variable("func"), [Number("0"), Number("0")]))
-
-
-## PROJECT EULER 2
-exp = LetFun(Variable("fib_sum"),
-             [Variable("a"), Variable("b"), Variable("s")],
-             If(BinOp(">=", Variable("a"), Number("4000000")),
-                Variable("s"),
-                If(BinOp("=", BinOp("%", Variable("a"), Number("2")), Number("0")),
-                   CallFun(Variable("fib_sum"), [Variable("b"), BinOp("+", Variable("a"), Variable("b")), BinOp("+", Variable("s"), Variable("a"))]),
-                   CallFun(Variable("fib_sum"), [Variable("b"), BinOp("+", Variable("a"), Variable("b")), Variable("s")])
-                   )
-                ),
-             CallFun(Variable("fib_sum"), [Number("0"), Number("1"), Number("0")]))
-
-# pprint(exp)
-# print()
-# res_exp = resolve(exp)
-# pprint(res_exp)
-# print()
-# pprint(e(res_exp))
-
-# Euler Problem 1
 exp = """
-letFunc func(x, s)
+let x := 5;
+letFunc f(y) 
 {
-     if x = 1000 then
-         s
-     else if x % 3 = 0 || x % 5 = 0 then
-         func(x + 1, s + x)
-     else
-         func(x + 1, s)
-}
-in
-func(0, 0)
-end
-"""
-
-# Euler Problem 2
-exp = """
-letFunc fib(a, b, s)
-{
-    if a >= 4000000 then
-        s
-    else if a % 2 = 0 then
-        fib(b, a + b, s + a)
-    else
-        fib(b, a + b, s)
-}
-in
-fib(0, 1, 0)
-end
-"""
-
-# Factorial
-exp = """
-letFunc fact(n)
-{
-    if n = 0 then
-        1
-    else
-        let x := fact(n - 1) in
-        n * x
-        end
-}
-in
-fact(5)
-end
-"""
-
-# Fixed this -> added CallFun at the highest precedence in parse_atom()
-exp = """
-letFunc f(a)
-{
-    a + a
-}
-in
-f(2) + f(3)
-end
-"""
-
-exp = """
-let x := 5 in
-letFunc f(y) {
-    x
-} 
-in
-letFunc g(z) { 
-    let x := 6 
-    in f(z)
-    end
-}
-in
-g(0)
-end
-end
-end
-"""
-
-exp = """
-letFunc f(x)
-{
-    x ^ 2
-}
-in
-letFunc g(f, y)
-{
-    f(y) + y
-}
-in
-g(f, 3)
-end
-end
-"""
-
-exp = """
-letFunc f(x)
-{
-    x * 7
-}
-in
-let g := f in
-let h := g in
-h(3)
-end
-end
-end
-"""
-
-exp = """
-letFunc g()
-{
-    let x := 5 in
-    letFunc f()
-    {
-        let x := 6 in
-        x
-        end
-    }
-    in
-    f()
-    end
-    end
-}
-in
-g()
-end
-"""
-
-# Wanted something like this -> but need print statement
-# def g():
-#     x = 5
-#     def f():
-#         x = 6
-#         print(x)
-    
-#     f()
-#     print(x)
-
-# g()
-
-# exp = """
-# letFunc f() {
-#     6
-# }
-# in letFunc f(x) {
-#     x + 3
-# }
-# in -f(f())
-# end
-# end
-# """
-# error as function overloading based on # of args missing
-
-exp = """
-let x := 6 in
-{
-print(x);
-print(3 * x - 3);
-}
-end
-"""
-
-exp = """
-letFunc fact(n)
-{
-    if n = 0 then
-        1;
-    else
-        n * fact(n - 1);
-}
-in
-fact(5);
-end
-"""
-
-exp = """
-letFunc g() 
-{
-    let x := 5 in
-    {
-        letFunc f()
-        {
-            let x := 6 in
-            print(x);
-        }
-        in
-        f();
-        print(x);
-    }
-}
-in
-g();
-"""
-
-exp = """
-let x := 6;
-let y := 3 * x - 3;
-print(x);
-print(y);
-
-letFunc f(x)
-{
-    let x := 5;
-    return x + 3;
-}
-in
-f(2);
-"""
-
-exp = """
-let x := 6 in {
-let y := 3 * x - 3 in {
-print(x);
-print(y);
-return;
-letFunc f(y)
-{
-    let x := 5 in {
-    return x + y;
-    }
-}
-in {
-print(f(2));
-print(f(3));
-}
-}
-}
-"""
-
-exp = """
-let x := 6 in
-{
-    return 2+3*x;   
-}
-print(x);
-"""
-
-exp = """
-let x := 5 in {
-letFunc f(y) {
     return x;
 } 
-in
-{
 print(x);
 print(f(2));
-letFunc g(z) { 
-    let x := 6 in {
-        return f(z);
-    }
+letFunc g(z) 
+{ 
+    let x := 6;
+    return f(z);
 }
-in
-{
 print(g(0));
+"""
+
+exp = """
+let x := 5;
+letFunc f(y) 
+{
+    return y ^ 2;
 }
+{
+    let x := 6;
+    print(f(x));
 }
-}
-}
+print(f(x));
+print(x);
 """
 
 print(exp)
