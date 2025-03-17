@@ -501,7 +501,6 @@ def resolve(program: AST, env: Environment = None) -> AST:
         case ReturnStmt(expr):
             return ReturnStmt(resolve_(expr))
 
-
 def e(tree: AST, env: Environment = None) -> int | float | bool:
     if env is None:
         env = Environment()
@@ -869,6 +868,37 @@ letFunc f(y)
 in {
 print(f(2));
 print(f(3));
+}
+}
+}
+"""
+
+exp = """
+let x := 6 in
+{
+    return 2+3*x;   
+}
+print(x);
+"""
+
+exp = """
+let x := 5 in {
+letFunc f(y) {
+    return x;
+} 
+in
+{
+print(x);
+print(f(2));
+letFunc g(z) { 
+    let x := 6 in {
+        return f(z);
+    }
+}
+in
+{
+print(g(0));
+}
 }
 }
 }
