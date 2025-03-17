@@ -463,6 +463,12 @@ def resolve(program: AST, env: Environment = None) -> AST:
             env.exit_scope()
             return LetFun(Variable(varName, i), new_params, new_body)
         
+        case Statements(stmts):
+            env.enter_scope()
+            stmts = [resolve_(stmt) for stmt in stmts]
+            env.exit_scope()
+            return Statements(stmts)
+        
         case CallFun(fn, args):
             rfn = resolve_(fn)
             rargs = [resolve_(arg) for arg in args]
@@ -481,12 +487,6 @@ def resolve(program: AST, env: Environment = None) -> AST:
             le = resolve_(left)
             ri = resolve_(right)
             return If(op, le, ri)
-        
-        case Statements(stmts):
-            env.enter_scope()
-            stmts = [resolve_(stmt) for stmt in stmts]
-            env.exit_scope()
-            return Statements(stmts)
         
         case PrintStmt(expr):
             return PrintStmt(resolve_(expr))
@@ -602,10 +602,16 @@ letFunc f(y)
 }
 {
     let x := 6;
-    print(f(x));
+    return f(x);
 }
 print(f(x));
 print(x);
+letFunc g(z)
+{
+    return f(z);
+}
+print(f(g(2)));
+g(3);
 """
 
 print(exp)
