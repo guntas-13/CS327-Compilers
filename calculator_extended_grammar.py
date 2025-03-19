@@ -199,11 +199,11 @@ def lex(s: str) -> Iterator[Token]:
             yield prev_token
 
         else:
-            if s[i:i+2] in {"<=", ">=", "!=", "||", "&&", ":="}:
+            if s[i:i+2] in {"<=", ">=", "!=", "||", "&&", "~|", "~&", "!|", "!&", "<<", ">>", "=>", ":="}:
                 prev_token = OperatorToken(s[i:i+2])
                 yield prev_token
                 i += 2
-            elif s[i] in {'+', '*', '/', '^', '-', '(', ')', '<', '>', '=', '%', '\u221a', ",", "{", "}", ";"}:
+            elif s[i] in {'+', '-', '*', '/', '^', '<', '>', '=', '%', '&', '|', '~', '(', ')', '{', '}', ';', ',' '\u221a'}:
                 prev_token = OperatorToken(s[i])
                 yield prev_token
                 i += 1
@@ -272,7 +272,7 @@ def parse(s: str) -> AST:
         e1 = None
         if peek() == OperatorToken(":="):
             consume(OperatorToken, ":=")
-            e1 = parse_expression()
+            e1 = parse_expB()
         consume(OperatorToken, ";")
         return Let(var, e1)
     
@@ -283,14 +283,14 @@ def parse(s: str) -> AST:
             case KeyWordToken("print"):
                 consume(KeyWordToken, "print")
                 consume(OperatorToken, "(")
-                expr = parse_expression()
+                expr = parse_expB()
                 consume(OperatorToken, ")")
                 consume(OperatorToken, ";")
                 return PrintStmt(expr)
             case KeyWordToken("return"):
                 consume(KeyWordToken, "return")
                 if peek() != OperatorToken(";"):
-                    expr = parse_expression()
+                    expr = parse_expB()
                 else:
                     expr = None
                 consume(OperatorToken, ";")
@@ -298,13 +298,13 @@ def parse(s: str) -> AST:
             case OperatorToken("{"):
                 return parse_block()
             case _:
-                expr = parse_expression()
+                expr = parse_expB()
                 consume(OperatorToken, ";")
                 return expr
         
     def parse_if():
         consume(KeyWordToken, "if")
-        condition = parse_expression()
+        condition = parse_expB()
         consume(KeyWordToken, "then")
         then_body = parse_statement()
         if peek() == KeyWordToken("else"):
@@ -323,108 +323,251 @@ def parse(s: str) -> AST:
         consume(OperatorToken, "}")
         return Statements(decls) if decls else Statements([])
     
-    def parse_expression():
-        return parse_bool()
-    
-    def parse_bool():
-        ast = parse_comparison()
-        while True:
-            match peek():
-                case OperatorToken("||"):
-                    consume()
-                    ast = BinOp("||", ast, parse_comparison())
-                case OperatorToken("&&"):
-                    consume()
-                    ast = BinOp("&&", ast, parse_comparison())
-                case _:
-                    return ast
-
-    def parse_comparison():
-        ast = parse_add()
+    def parse_expB():
         match peek():
-            case OperatorToken(op) if op in {"<", ">", "<=", ">=", "=", "!="}:
-                consume()
-                return BinOp(op, ast, parse_add())
+            case OperatorToken("|"):
+                return parse_orB()
+            case OperatorToken("~"):
+                return parse_notB()
+            case OperatorToken("&"):
+                return parse_andB()
+            case OperatorToken(op) if op in {"<", "<="}:
+                return parse_less()
+            case OperatorToken(op) if op in {">", ">="}:
+                return parse_greater()
+            case OperatorToken("="):  # Equality as a standalone case
+                return parse_less()  # Treat = as part of Less for simplicity
             case _:
-                return ast
+                return parse_unAmbB()
+    
+    def parse_unAmbB():
+        match peek():
+            case OperatorToken("("):
+                consume(OperatorToken, "(")
+                expr = parse_expB()
+                consume(OperatorToken, ")")
+                return expr
+            case _:
+                return parse_exp()
+    
+    def parse_orB():
+        left = parse_unAmbB()
+        while peek() == OperatorToken("|"):
+            consume()
+            right = parse_orB()
+            left = BinOp("|", left, right)
+        return left
+    
+    def parse_notB():
+        consume(OperatorToken, "~")
+        right = parse_notB() if peek() == OperatorToken("~") else parse_unAmbB()
+        return UnOp("~", right)
+    
+    def parse_andB():
+        left = parse_unAmbB()
+        while peek() == OperatorToken("&"):
+            consume()
+            right = parse_andB()
+            left = BinOp("&", left, right)
+        return left
+    
+    def parse_less():
+        left = parse_exp()
+        match peek():
+            case OperatorToken("<"):
+                consume()
+                right = parse_exp()
+                return BinOp("<", left, right)
+            case OperatorToken("<="):
+                consume()
+                right = parse_exp()
+                return BinOp("<=", left, right)
+            case OperatorToken("="):
+                consume()
+                right = parse_exp()
+                return BinOp("=", left, right)
+        return left
+    
+    def parse_greater():
+        left = parse_exp()
+        match peek():
+            case OperatorToken(">"):
+                consume()
+                right = parse_exp()
+                return BinOp(">", left, right)
+            case OperatorToken(">="):
+                consume()
+                right = parse_exp()
+                return BinOp(">=", left, right)
+            case OperatorToken("="):
+                consume()
+                right = parse_exp()
+                return BinOp("=", left, right)
+        return left
+    
+    def parse_exp():
+        match peek():
+            case OperatorToken("+"):
+                return parse_add()
+            case OperatorToken("*"):
+                return parse_multiply()
+            case OperatorToken("/"):
+                return parse_divide()
+            case OperatorToken("-"):
+                return parse_subtract()
+            case OperatorToken("^"):
+                return parse_power()
+            case OperatorToken("%"):
+                return parse_modulo()
+            case OperatorToken("&"):
+                return parse_and()
+            case OperatorToken("|"):
+                return parse_or()
+            case OperatorToken("~"):
+                return parse_not()
+            case OperatorToken("!|"):
+                return parse_xor()
+            case OperatorToken("!&"):
+                return parse_xand()
+            case OperatorToken(op) if op in {">>", "<<"}:
+                return parse_shift()
+            case _:
+                return parse_unAmb()
+    
+    def parse_unAmb():
+        match peek():
+            case OperatorToken("("):
+                consume(OperatorToken, "(")
+                expr = parse_exp()
+                consume(OperatorToken, ")")
+                return expr
+            case _:
+                return parse_atomic()
     
     def parse_add():
-        ast = parse_mul()
-        while True:
-            match peek():
-                case OperatorToken('+'):
-                    consume()
-                    ast = BinOp('+', ast, parse_mul())
-                case OperatorToken('-'):
-                    consume()
-                    ast = BinOp('-', ast, parse_mul())
-                case OperatorToken("%"):
-                    consume()
-                    ast = BinOp("%", ast, parse_mul())
-                case _:
-                    return ast
- 
-    def parse_mul():
-        ast = parse_exponentiation()
-        while True:
-            match peek():
-                case OperatorToken('*'):
-                    consume()
-                    ast = BinOp("*", ast, parse_exponentiation())
-                case OperatorToken('/'):
-                    consume()
-                    ast = BinOp("/", ast, parse_exponentiation())
-                case _:
-                    return ast
+        left = parse_unAmb()
+        while peek() == OperatorToken("+"):
+            consume()
+            right = parse_add()
+            left = BinOp("+", left, right)
+        return left
     
-    def parse_exponentiation():
-        ast = parse_atom()
-        while True:
-            match peek():
-                case OperatorToken('^'):
-                    consume()
-                    ast = BinOp("^", ast, parse_exponentiation())
-                case _:
-                    return ast
+    def parse_multiply():
+        left = parse_unAmb()
+        while peek() == OperatorToken("*"):
+            consume()
+            right = parse_multiply()
+            left = BinOp("*", left, right)
+        return left
+    
+    def parse_divide():
+        left = parse_unAmb()
+        if peek() == OperatorToken("/"):
+            consume()
+            right = parse_unAmb()
+            return BinOp("/", left, right)
+        return left
+    
+    def parse_subtract():
+        left = parse_unAmb()
+        if peek() == OperatorToken("-"):
+            consume()
+            right = parse_unAmb()
+            return BinOp("-", left, right)
+        return left
+    
+    def parse_power():
+        left = parse_unAmb()
+        if peek() == OperatorToken("^"):
+            consume()
+            right = parse_unAmb()
+            return BinOp("^", left, right)
+        return left
+    
+    def parse_modulo():
+        left = parse_unAmb()
+        if peek() == OperatorToken("%"):
+            consume()
+            right = parse_unAmb()
+            return BinOp("%", left, right)
+        return left
+    
+    def parse_and():
+        left = parse_unAmb()
+        while peek() == OperatorToken("&"):
+            consume()
+            right = parse_and()
+            left = BinOp("&", left, right)
+        return left
+    
+    def parse_or():
+        left = parse_unAmb()
+        while peek() == OperatorToken("|"):
+            consume()
+            right = parse_or()
+            left = BinOp("|", left, right)
+        return left
+    
+    def parse_not():
+        consume(OperatorToken, "~")
+        right = parse_not() if peek() == OperatorToken("~") else parse_unAmb()
+        return UnOp("~", right)
+    
+    def parse_xor():
+        left = parse_unAmb()
+        while peek() == OperatorToken("!|"):
+            consume()
+            right = parse_xor()
+            left = BinOp("!|", left, right)
+        return left
+    
+    def parse_xand():
+        left = parse_unAmb()
+        while peek() == OperatorToken("!&"):
+            consume()
+            right = parse_xand()
+            left = BinOp("!&", left, right)
+        return left
+    
+    def parse_shift():
+        left = parse_unAmb()
+        match peek():
+            case OperatorToken("<<"):
+                consume()
+                right = parse_unAmb()
+                return BinOp("<<", left, right)
+            case OperatorToken(">>"):
+                consume()
+                right = parse_unAmb()
+                return BinOp(">>", left, right)
+        return left
 
-    def parse_atom():
+    def parse_atomic():
         match peek():
             case NumberToken(v):
                 consume()
                 val = float(v) if '.' in v else int(v)
                 return Number(val)
-            
+            case OperatorToken("-"):
+                consume()
+                right = parse_atomic()
+                return UnOp("-", right)
             case VariableToken(varName):
                 consume()
                 return Variable(varName)
-            
             case FunCallToken(_):
                 fn_name = consume(FunCallToken).funName
                 consume(OperatorToken, "(")
                 args = []
                 if peek() != OperatorToken(")"):
                     while True:
-                        args.append(parse_expression())
+                        args.append(parse_expB())
                         if peek() == OperatorToken(","):
                             consume(OperatorToken, ",")
                         else:
                             break
                 consume(OperatorToken, ")")
                 return CallFun(Variable(fn_name), args)
-            
-            case OperatorToken('-'):
-                consume()
-                return UnOp("-", parse_atom())
-            
-            case OperatorToken('\u221a'):
-                consume()
-                return UnOp("\u221a", parse_atom())
-            
-            case OperatorToken("("):
-                consume()
-                ast = parse_expression()
-                consume(OperatorToken, ")")
-                return ast
             case _:
                 raise ParseErr(f"Unexpected token at index {i}")
 
@@ -663,7 +806,12 @@ letFunc F(x)
 }
 
 var y := F(5);
-y() * y();
+y();
+"""
+
+exp = """
+var x := ((6/2)/2);
+x;
 """
 
 print(exp)
