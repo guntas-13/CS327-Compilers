@@ -656,22 +656,21 @@ var msg := f1();
 msg();
 """
 
-# wanted this!
-# exp = """
-# letFunc f1()
-# {
-#     var x := 10;
-#     letFunc f2()
-#     {
-#         return x;
-#     }
-#     return f2;
-# }
-# var msg := f1();
-# msg();
-# """
-# got:
-# ValueError: Variable x:8 not defined
+exp = """
+var x := 6;
+
+letFunc F(x)
+{
+    letFunc G()
+    {
+        return x;
+    }
+    return G;
+}
+
+var y := F(5);
+y();
+"""
 
 
 print(exp)

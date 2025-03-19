@@ -23,22 +23,12 @@ parameters → IDENTIFIER ("," IDENTIFIER)*;
 ## Addition of Closures
 
 ```python
-exp = """
-letFunc f1()
-{
-    var x := 10;
-    letFunc f2()
-    {
-        return x;
-    }
-    return f2;
-}
-var msg := f1();
-msg();
-"""
-```
+@dataclass
+class FunObj:
+    params: List[AST]
+    body: AST
+    env: Environment
 
-```python
 def e(tree: AST, env: Environment = None) -> int | float | bool:
 
     match tree:
@@ -62,8 +52,46 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             return rbody
 ```
 
+```python
+exp = """
+letFunc f1()
+{
+    var x := 10;
+    letFunc f2()
+    {
+        return x;
+    }
+    return f2;
+}
+var msg := f1();
+msg();
+"""
+```
+
 <div align = "center">
     <img src = "./images/closure.png" style="width: 100%">
+</div>
+
+```python
+exp = """
+var x := 6;
+
+letFunc F(x)
+{
+    letFunc G()
+    {
+        return x;
+    }
+    return G;
+}
+
+var y := F(5);
+y();
+"""
+```
+
+<div align = "center">
+    <img src = "./images/closure1.png" style="width: 100%">
 </div>
 
 ## Functions as First-Class Objects (like variables)
