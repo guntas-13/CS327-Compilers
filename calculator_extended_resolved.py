@@ -5,6 +5,7 @@ from pprint import pprint
 from graphviz import Digraph # type: ignore
 from typing import List, Optional
 import sys
+from copy import deepcopy
 
 sys.setrecursionlimit(10000)
 
@@ -304,7 +305,9 @@ def parse(s: str) -> AST:
         
     def parse_if():
         consume(KeyWordToken, "if")
+        consume(OperatorToken, "(")
         condition = parse_expression()
+        consume(OperatorToken, ")")
         consume(KeyWordToken, "then")
         then_body = parse_statement()
         if peek() == KeyWordToken("else"):
@@ -497,7 +500,10 @@ def resolve(program: AST, env: Environment = None) -> AST:
         case ReturnStmt(expr):
             return ReturnStmt(resolve_(expr))
 
+
+return_triggered = False
 def e(tree: AST, env: Environment = None) -> int | float | bool:
+    global return_triggered
     if env is None:
         env = Environment()
         
@@ -509,6 +515,8 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             res = None
             for decl in decls:
                 res = e_(decl)
+                # pprint(res)
+                # print("------------------------------------------------")
             return res
         
         case Number(val):
@@ -524,30 +532,89 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             env.add(f"{varName}:{i}", v1)
             return v1
         
+        # case LetFun(Variable(varName, i), params, body):
+        #     # Closure -> Copy of Environment taken along
+        #     pprint(env.envs)
+        #     print("------------------------------------------------")
+        #     env_copy = env.copy()
+        #     funObj = FunObj(params, body, env_copy)
+        #     pprint(env_copy.envs)
+        #     print("------------------------------------------------")
+        #     env.add(f"{varName}:{i}", funObj)
+        #     print(env.envs)
+        #     print("------------------------------------------------")
+        #     return None
+        
+        # case CallFun(Variable(varName, i), args):
+        #     fun = env.get(f"{varName}:{i}")
+        #     print(fun)
+        #     print("------------------------------------------------")
+        #     rargs = [e_(arg) for arg in args]
+            
+        #     # use the environment that was copied when the function was defined
+        #     call_env = fun.env.copy()
+        #     pprint(call_env.envs)
+        #     print("------------------------------------------------")
+        #     call_env.enter_scope()
+        #     pprint(call_env.envs)
+        #     print("------------------------------------------------")
+        #     for param, arg in zip(fun.params, rargs):
+        #         call_env.add(f"{param.varName}:{param.id}", arg)
+            
+        #     pprint(call_env.envs)
+        #     env.envs.append(call_env.envs[-1])
+        #     print(env.envs)
+        #     print("------------------------------------------------")
+        #     rbody = e_(fun.body)
+        #     exit()
+        #     # env.exit_scope()
+        #     return rbody
+        
         case LetFun(Variable(varName, i), params, body):
-            # Closure -> Copy of Environment taken along
-            funObj = FunObj(params, body, env.copy())
+            # Create the FunObj with a placeholder env first
+            funObj = FunObj(params, body, None)
+            # Add it to the environment immediately
             env.add(f"{varName}:{i}", funObj)
+            print(env.envs)
+            print("------------------------------------------------")
+            # Now update the FunObj with the current environment
+            funObj.env = env.copy()
+            print(funObj.env.envs)
+            print("------------------------------------------------")
             return None
         
         case CallFun(Variable(varName, i), args):
+            global return_triggered
             fun = env.get(f"{varName}:{i}")
+            print(env.envs)
+            print("------------------------------------------------")
             rargs = [e_(arg) for arg in args]
-            
-            # use the environment that was copied when the function was defined
+            print(fun.env)
+            print("------------------------------------------------")
             call_env = fun.env.copy()
             call_env.enter_scope()
             for param, arg in zip(fun.params, rargs):
                 call_env.add(f"{param.varName}:{param.id}", arg)
             
             rbody = e(fun.body, call_env)
+            return_triggered = False
             return rbody
         
         case Statements(stmts):
             env.enter_scope()
+            print(env.envs)
+            print("------------------------------------------------")
             res = None
             for stmt in stmts:
                 res = e_(stmt)
+                # if isinstance(stmt, If):  # Stop if we hit a return
+                #     env.exit_scope()
+                #     return res
+                # if res is not None and not isinstance(stmt, (If, Statements)):
+                #     env.exit_scope()
+                #     return res
+                if return_triggered:
+                    return res
             env.exit_scope()
             return res
         
@@ -556,10 +623,9 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             return
         
         case ReturnStmt(expr):
-            if expr:
-                return e_(expr)
-            else:
-                return
+            # global return_triggered
+            return_triggered = True
+            return e_(expr) if expr else None
             
         case BinOp("+", left, right): return e_(left) + e_(right)
         case BinOp("*", left, right): return e_(left) * e_(right)
@@ -664,6 +730,15 @@ letFunc F(x)
 
 var y := F(5);
 y() * y();
+"""
+
+exp = """
+letFunc fact(n)
+{
+    if (n < 2) then n;
+    n * fact(n - 1);
+}
+fact(3);
 """
 
 print(exp)
