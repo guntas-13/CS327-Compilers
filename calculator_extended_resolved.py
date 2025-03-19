@@ -313,8 +313,11 @@ def parse(s: str) -> AST:
         condition = parse_expression()
         consume(KeyWordToken, "then")
         then_body = parse_statement()
-        consume(KeyWordToken, "else")
-        else_body = parse_statement()
+        if peek() == KeyWordToken("else"):
+            consume(KeyWordToken, "else")
+            else_body = parse_statement()
+        else:
+            else_body = None
         return If(condition, then_body, else_body)
     
     def parse_block():
@@ -488,11 +491,11 @@ def resolve(program: AST, env: Environment = None) -> AST:
             ri = resolve_(right)
             return UnOp(op, ri)
         
-        case If(op, left, right):
-            op = resolve_(op)
-            le = resolve_(left)
-            ri = resolve_(right)
-            return If(op, le, ri)
+        case If(condition, then_body, else_body):
+            condition = resolve_(condition)
+            then_body = resolve_(then_body)
+            else_body = resolve_(else_body) if else_body else None
+            return If(condition, then_body, else_body)
         
         case PrintStmt(expr):
             return PrintStmt(resolve_(expr))
@@ -586,7 +589,7 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             if e_(condition):
                 return e_(then_body) 
             else:
-                return e_(else_body)
+                return e_(else_body) if else_body else None
 
 
 exp = """

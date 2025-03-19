@@ -1,5 +1,71 @@
 # CS327-Compilers
 
+## Overall Grammar
+
+```
+program → declaration* EOF;
+
+declaration → funDecl | varDecl | statement;
+funDecl → "letFunc" IDENTIFIER "(" parameters? ")" block;
+varDecl → "var" IDENTIFIER (":=" expression)? ";";
+statement → ifStmt | printStmt | returnStmt | block | expressionStmt;
+
+ifStmt → "if" expression statement ("else" statement)?;
+printStmt → "print" expression ";";
+returnStmt → "return" expression ";";
+block → "{" declaration* "}";
+
+expressionStmt → expression ";";
+
+parameters → IDENTIFIER ("," IDENTIFIER)*;
+```
+
+## Addition of Closures
+
+```python
+exp = """
+letFunc f1()
+{
+    var x := 10;
+    letFunc f2()
+    {
+        return x;
+    }
+    return f2;
+}
+var msg := f1();
+msg();
+"""
+```
+
+```python
+def e(tree: AST, env: Environment = None) -> int | float | bool:
+
+    match tree:
+        case LetFun(Variable(varName, i), params, body):
+                # Closure -> Copy of Environment taken along
+                funObj = FunObj(params, body, env.copy())
+                env.add(f"{varName}:{i}", funObj)
+                return None
+
+        case CallFun(Variable(varName, i), args):
+            fun = env.get(f"{varName}:{i}")
+            rargs = [e_(arg) for arg in args]
+
+            # use the environment that was copied when the function was defined
+            call_env = fun.env.copy()
+            call_env.enter_scope()
+            for param, arg in zip(fun.params, rargs):
+                call_env.add(f"{param.varName}:{param.id}", arg)
+
+            rbody = e(fun.body, call_env)
+            return rbody
+```
+
+<div align = "center">
+    <img src = "./images/closure.png" style="width: 100%">
+</div>
+
 ## Functions as First-Class Objects (like variables)
 
 ```python
