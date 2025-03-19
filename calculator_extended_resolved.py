@@ -8,6 +8,41 @@ import sys
 
 sys.setrecursionlimit(10000)
 
+class Environment:
+    envs: List
+    
+    def __init__(self):
+        self.envs = [{}]
+    
+    def enter_scope(self):
+        self.envs.append({})
+    
+    def exit_scope(self):
+        assert self.envs
+        self.envs.pop()
+    
+    def add(self, var, val):
+        assert var not in self.envs[-1], f"Variable {var} already defined"
+        self.envs[-1][var] = val
+    
+    def get(self, var):
+        for env in reversed(self.envs):
+            if var in env:
+                return env[var]
+        raise ValueError(f"Variable {var} not defined")
+    
+    def update(self, var, val):
+        for env in reversed(self.envs):
+            if var in env:
+                env[var] = val
+                return
+        raise ValueError(f"Variable {var} not defined")
+    
+    def copy(self):
+        new_env = Environment()
+        new_env.envs = [dict(scope) for scope in self.envs]
+        return new_env
+
 cnt = 0
 def fresh():
     global cnt
@@ -72,6 +107,7 @@ class CallFun(AST):
 class FunObj:
     params: List[AST]
     body: AST
+    env: Environment
     
 @dataclass
 class Statements(AST):
@@ -131,13 +167,13 @@ def lex(s: str) -> Iterator[Token]:
         if i >= len(s):
             return
 
-        if s[i].isalpha():
+        if s[i].isalpha() or s[i] == '_':
             start = i
-            while i < len(s) and s[i].isalpha():
+            while i < len(s) and (s[i].isalpha() or s[i].isdigit() or s[i] == '_'):
                 i += 1
-            name = s[start:i]
+                name = s[start:i]
 
-            if name in {"if", "then", "else", "end", "let", "in", "letFunc", "print", "return"}:
+            if name in {"if", "then", "else", "end", "var", "in", "letFunc", "print", "return"}:
                 prev_token = KeyWordToken(name)
                 yield prev_token
 
@@ -212,7 +248,7 @@ def parse(s: str) -> AST:
         match peek():
             case KeyWordToken("letFunc"):
                 return parse_func()
-            case KeyWordToken("let"):
+            case KeyWordToken("var"):
                 return parse_let()
             case _:
                 return parse_statement()
@@ -237,7 +273,7 @@ def parse(s: str) -> AST:
         return LetFun(Variable(func_name.varName), args, body)
     
     def parse_let():
-        consume(KeyWordToken, "let")
+        consume(KeyWordToken, "var")
         var = Variable(consume(VariableToken).varName)
         e1 = None
         if peek() == OperatorToken(":="):
@@ -398,36 +434,6 @@ def parse(s: str) -> AST:
     return parse_program()
 
 
-class Environment:
-    envs: List
-    
-    def __init__(self):
-        self.envs = [{}]
-    
-    def enter_scope(self):
-        self.envs.append({})
-    
-    def exit_scope(self):
-        assert self.envs
-        self.envs.pop()
-    
-    def add(self, var, val):
-        assert var not in self.envs[-1], f"Variable {var} already defined"
-        self.envs[-1][var] = val
-    
-    def get(self, var):
-        for env in reversed(self.envs):
-            if var in env:
-                return env[var]
-        raise ValueError(f"Variable {var} not defined")
-    
-    def update(self, var, val):
-        for env in reversed(self.envs):
-            if var in env:
-                env[var] = val
-                return
-        raise ValueError(f"Variable {var} not defined")
-
 def resolve(program: AST, env: Environment = None) -> AST:
     if env is None:
         env = Environment()
@@ -511,7 +517,9 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
         case Number(val):
             return val
         
-        case Variable(varName, i): 
+        case Variable(varName, i):
+            # pprint(env.envs)
+            # print("------------------------------------------------")
             return env.get(f"{varName}:{i}")
         
         case Let(Variable(varName, i), e1):
@@ -520,19 +528,22 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             return v1
         
         case LetFun(Variable(varName, i), params, body):
-            env.add(f"{varName}:{i}", FunObj(params, body))
+            # Closure -> Copy of Environment taken along
+            funObj = FunObj(params, body, env.copy())
+            env.add(f"{varName}:{i}", funObj)
             return None
         
         case CallFun(Variable(varName, i), args):
             fun = env.get(f"{varName}:{i}")
             rargs = [e_(arg) for arg in args]
             
-            env.enter_scope()
+            # use the environment that was copied when the function was defined
+            call_env = fun.env.copy()
+            call_env.enter_scope()
             for param, arg in zip(fun.params, rargs):
-                env.add(f"{param.varName}:{param.id}", arg)
+                call_env.add(f"{param.varName}:{param.id}", arg)
             
-            rbody = e_(fun.body)
-            env.exit_scope()
+            rbody = e(fun.body, call_env)
             return rbody
         
         case Statements(stmts):
@@ -579,7 +590,7 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
 
 
 exp = """
-let x := 5;
+var x := 5;
 letFunc f(y) 
 {
     return x;
@@ -588,20 +599,20 @@ print(x);
 print(f(2));
 letFunc g(z) 
 { 
-    let x := 6;
+    var x := 6;
     return f(z);
 }
 print(g(0));
 """
 
 exp = """
-let x := 5;
+var x := 5;
 letFunc f(y) 
 {
     return y ^ 2;
 }
 {
-    let x := 6;
+    var x := 6;
     return f(x);
 }
 print(f(x));
@@ -611,8 +622,54 @@ letFunc g(z)
     return f(z);
 }
 print(f(g(2)));
-g(3);
+print(g(3));
 """
+
+exp = """
+letFunc f1()
+{
+    letFunc f2()
+    {
+        var x := 10;
+        return x;
+    }
+    return f2;
+}
+var msg := f1();
+msg();
+"""
+
+exp = """
+letFunc f1()
+{
+    var x := 10;
+    letFunc f2()
+    {
+        return x;
+    }
+    return f2;
+}
+var msg := f1();
+msg();
+"""
+
+# wanted this!
+# exp = """
+# letFunc f1()
+# {
+#     var x := 10;
+#     letFunc f2()
+#     {
+#         return x;
+#     }
+#     return f2;
+# }
+# var msg := f1();
+# msg();
+# """
+# got:
+# ValueError: Variable x:8 not defined
+
 
 print(exp)
 print()
