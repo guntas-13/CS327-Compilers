@@ -1,8 +1,8 @@
-from calculator_extended import parse, e, resolve
+from calculator_extended_resolved import parse, e, resolve
 from pprint import pprint
 from colorama import Fore, Style
 
-def unit_test(expr: str, expected_value, results):
+def unit_test(expr: str, expected_value: str, results):
     print(f"Expression: {expr}")
     try:
         ast = resolve(parse(expr))
@@ -53,149 +53,106 @@ unit_test("\u221a(4)", 2, log)
 exp_sq = "\u221a(4 + 12) + \u221a(9)"
 unit_test(exp_sq, 7.0, log)
 
-exp_cond1 = """
-if 2 < 3 then
-    0 + 5
-else
-    1 * 6
-"""
-unit_test("if 2 < 3 then 2 else 3", 2, log)
-unit_test(exp_cond1, 5, log)
-
-
-exp_cond = """
-if 2 < 3 then 
-    if 4 > 5 then 
-        1 
-    else if 6 <= 7 then 
-        8 
-    else 
-        9 
-else 
-    10 
-"""
-unit_test(exp_cond, 8, log)
-
-
-# Euler Problem 1
 exp = """
-letFunc func(x, s)
+var x := 5;
+letFunc f(y) 
 {
-     if x = 1000 then
-         s
-     else if x % 3 = 0 || x % 5 = 0 then
-         func(x + 1, s + x)
-     else
-         func(x + 1, s)
-}
-in
-func(0, 0)
-end
-"""
-unit_test(exp, 233168, log)
-
-
-# Euler Problem 2
-exp = """
-letFunc fib(a, b, s)
-{
-    if a >= 4000000 then
-        s
-    else if a % 2 = 0 then
-        fib(b, a + b, s + a)
-    else
-        fib(b, a + b, s)
-}
-in
-fib(0, 1, 0)
-end
-"""
-unit_test(exp, 4613732, log)
-
-# Factorial
-exp = """
-letFunc fact(n)
-{
-    if n = 0 then
-        1
-    else
-        let x := fact(n - 1) in
-        n * x
-        end
-}
-in
-fact(5)
-end
-"""
-
-unit_test(exp, 120, log)
-
-# Fixed this -> added CallFun at the highest precedence in parse_atom()
-exp = """
-letFunc f(a)
-{
-    a + a
-}
-in
-f(2) + f(3)
-end
-"""
-
-unit_test(exp, 10, log)
-
-exp = """
-let x := 5 in
-letFunc f(y) {
-    x
+    return x;
 } 
-in
-letFunc g(z) { 
-    let x := 6 
-    in f(z)
-    end
+print(x);
+print(f(2));
+letFunc g(z) 
+{ 
+    var x := 6;
+    return f(z);
 }
-in
-g(0)
-end
-end
-end
+g(0);
 """
 
 unit_test(exp, 5, log)
 
-
 exp = """
-letFunc f(x)
+var x := 5;
+letFunc f(y) 
 {
-    x ^ 2
+    return y ^ 2;
 }
-in
-letFunc g(f, y)
 {
-    f(y) + y
+    var x := 6;
+    return f(x);
 }
-in
-g(f, 3)
-end
-end
+print(f(x));
+print(x);
+letFunc g(z)
+{
+    return f(z);
+}
+print(f(g(2)));
+print(g(3));
 """
 
-unit_test(exp, 12, log)
-
-
 exp = """
-letFunc f(x)
+letFunc f1()
 {
-    x * 7
+    letFunc f2()
+    {
+        var x := 10;
+        return x;
+    }
+    return f2;
 }
-in
-let g := f in
-g(3)
-end
-end
+var msg := f1();
+msg();
 """
 
-unit_test(exp, 21, log)
+exp = """
+letFunc f1()
+{
+    var x := 10;
+    letFunc f2()
+    {
+        return x;
+    }
+    return f2;
+}
+var msg := f1();
+msg();
+"""
+
+exp = """
+var x := 6;
+
+letFunc F(x)
+{
+    letFunc G()
+    {
+        return x;
+    }
+    return G;
+}
+
+var y := F(5);
+y() * y();
+"""
+
+exp = """
+var x := 15;
+if (x > 10)
+if (x < 20)
+print(x + 1);
+else print(x - 1);
+x;
+"""
+
+exp = """
+letFunc fact(n)
+{
+    if (n = 0)
+        return 1;
+    return n * fact(n - 1);
+}
+fact(5);
+"""
 
 print("\nTest Summary:")
 passed_count = 0

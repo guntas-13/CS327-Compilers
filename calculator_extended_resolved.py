@@ -93,9 +93,6 @@ class LetMut(AST):
 class Variable(AST):
     varName: str
     id: int = None
-    
-    # def make(name):
-    #     return Variable(name, fresh())
 
 @dataclass
 class LetFun(AST):
@@ -178,7 +175,7 @@ def lex(s: str) -> Iterator[Token]:
                 i += 1
                 name = s[start:i]
 
-            if name in {"if", "then", "else", "end", "var", "in", "letFunc", "print", "return"}:
+            if name in {"if", "else", "var", "in", "letFunc", "print", "return"}:
                 prev_token = KeyWordToken(name)
                 yield prev_token
 
@@ -310,7 +307,6 @@ def parse(s: str) -> AST:
     def parse_if():
         consume(KeyWordToken, "if")
         condition = parse_expression()
-        consume(KeyWordToken, "then")
         then_body = parse_statement()
         if peek() == KeyWordToken("else"):
             consume(KeyWordToken, "else")
@@ -448,8 +444,7 @@ def resolve(program: AST, env: Environment = None) -> AST:
             return Program(new_decls)
         
         case Variable(varName, _):
-            return Variable(varName, env.get(varName)) # This ask too! why sir did env.get(varName)
-            # return env.get(varName)
+            return Variable(varName, env.get(varName))
         
         case Number(_) as N:
             return N
@@ -524,8 +519,6 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             return val
         
         case Variable(varName, i):
-            # pprint(env.envs)
-            # print("------------------------------------------------")
             return env.get(f"{varName}:{i}")
         
         case Let(Variable(varName, i), e1):
@@ -534,7 +527,7 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             return v1
         
         case LetFun(Variable(varName, i), params, body):
-            # Closure -> Copy of Environment taken along
+            # Closure -> Copy of Environment taken along with the declaration!
             funObj = FunObj(params, body, None)
             env.add(f"{varName}:{i}", funObj)
             funObj.env = env.copy()
@@ -558,11 +551,6 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             res = None
             for i, stmt in enumerate(stmts):
                 res = e_(stmt)
-                # print("----------------------")
-                # print("----------------------")
-                # print(f"{i}: {res}")
-                # print("----------------------")
-                # print("----------------------")
                 if res is not None:
                     env.exit_scope()
                     return res
@@ -576,8 +564,7 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
         case ReturnStmt(expr):
             if expr:
                 return e_(expr)
-            else:
-                return None
+            return None
             
         case BinOp("+", left, right): return e_(left) + e_(right)
         case BinOp("*", left, right): return e_(left) * e_(right)
@@ -674,16 +661,6 @@ msg();
 """
 
 exp = """
-letFunc fact(n)
-{
-    if (n = 0) then
-        return 1;
-    return n * fact(n - 1);
-}
-fact(5);
-"""
-
-exp = """
 var x := 6;
 
 letFunc F(x)
@@ -701,11 +678,21 @@ y() * y();
 
 exp = """
 var x := 15;
-if (x > 10) then
-if (x < 20) then
+if (x > 10)
+if (x < 20)
 print(x + 1);
 else print(x - 1);
 x;
+"""
+
+exp = """
+letFunc fact(n)
+{
+    if (n = 0)
+        return 1;
+    return n * fact(n - 1);
+}
+fact(5);
 """
 
 print(exp)
@@ -720,4 +707,3 @@ rexp = resolve(parse(exp))
 pprint(rexp)
 print()
 print(e(rexp))
-# exit()
