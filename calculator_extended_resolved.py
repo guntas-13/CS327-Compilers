@@ -73,6 +73,11 @@ class If(AST):
     condition: AST
     then_body: AST
     else_body: AST
+
+@dataclass
+class IfUnM(AST):
+    condition: AST
+    then_body: AST
 @dataclass
 class Let(AST):
     var: AST
@@ -310,9 +315,8 @@ def parse(s: str) -> AST:
         if peek() == KeyWordToken("else"):
             consume(KeyWordToken, "else")
             else_body = parse_statement()
-        else:
-            else_body = None
-        return If(condition, then_body, else_body)
+            return If(condition, then_body, else_body)
+        return IfUnM(condition, then_body)
     
     def parse_block():
         consume(OperatorToken, "{")
@@ -488,8 +492,13 @@ def resolve(program: AST, env: Environment = None) -> AST:
         case If(condition, then_body, else_body):
             condition = resolve_(condition)
             then_body = resolve_(then_body)
-            else_body = resolve_(else_body) if else_body else None
+            else_body = resolve_(else_body)
             return If(condition, then_body, else_body)
+        
+        case IfUnM(condition, then_body):
+            condition = resolve_(condition)
+            then_body = resolve_(then_body)
+            return IfUnM(condition, then_body)
         
         case PrintStmt(expr):
             return PrintStmt(resolve_(expr))
@@ -526,8 +535,9 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
         
         case LetFun(Variable(varName, i), params, body):
             # Closure -> Copy of Environment taken along
-            funObj = FunObj(params, body, env.copy())
+            funObj = FunObj(params, body, None)
             env.add(f"{varName}:{i}", funObj)
+            funObj.env = env.copy()
             return None
         
         case CallFun(Variable(varName, i), args):
@@ -546,8 +556,16 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
         case Statements(stmts):
             env.enter_scope()
             res = None
-            for stmt in stmts:
+            for i, stmt in enumerate(stmts):
                 res = e_(stmt)
+                # print("----------------------")
+                # print("----------------------")
+                # print(f"{i}: {res}")
+                # print("----------------------")
+                # print("----------------------")
+                if res is not None:
+                    env.exit_scope()
+                    return res
             env.exit_scope()
             return res
         
@@ -559,7 +577,7 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             if expr:
                 return e_(expr)
             else:
-                return
+                return None
             
         case BinOp("+", left, right): return e_(left) + e_(right)
         case BinOp("*", left, right): return e_(left) * e_(right)
@@ -583,7 +601,12 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             if e_(condition):
                 return e_(then_body) 
             else:
-                return e_(else_body) if else_body else None
+                return e_(else_body)
+        
+        case IfUnM(condition, then_body):
+            if e_(condition):
+                return e_(then_body)
+            return None
 
 
 exp = """
@@ -651,6 +674,16 @@ msg();
 """
 
 exp = """
+letFunc fact(n)
+{
+    if (n = 0) then
+        return 1;
+    return n * fact(n - 1);
+}
+fact(5);
+"""
+
+exp = """
 var x := 6;
 
 letFunc F(x)
@@ -664,6 +697,15 @@ letFunc F(x)
 
 var y := F(5);
 y() * y();
+"""
+
+exp = """
+var x := 15;
+if (x > 10) then
+if (x < 20) then
+print(x + 1);
+else print(x - 1);
+x;
 """
 
 print(exp)
