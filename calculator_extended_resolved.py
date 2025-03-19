@@ -501,9 +501,9 @@ def resolve(program: AST, env: Environment = None) -> AST:
             return ReturnStmt(resolve_(expr))
 
 
-return_triggered = False
+# return_triggered = False
 def e(tree: AST, env: Environment = None) -> int | float | bool:
-    global return_triggered
+    # global return_triggered
     if env is None:
         env = Environment()
         
@@ -584,7 +584,7 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             return None
         
         case CallFun(Variable(varName, i), args):
-            global return_triggered
+            # global return_triggered
             fun = env.get(f"{varName}:{i}")
             print(env.envs)
             print("------------------------------------------------")
@@ -597,7 +597,7 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
                 call_env.add(f"{param.varName}:{param.id}", arg)
             
             rbody = e(fun.body, call_env)
-            return_triggered = False
+            # return_triggered = False
             return rbody
         
         case Statements(stmts):
@@ -613,8 +613,13 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
                 # if res is not None and not isinstance(stmt, (If, Statements)):
                 #     env.exit_scope()
                 #     return res
-                if return_triggered:
-                    return res
+                # if return_triggered:
+                #     print("------------------------------------------------")
+                #     print("------------------------------------------------")
+                #     print(f"RES: {res}")
+                #     print("------------------------------------------------")
+                #     print("------------------------------------------------")
+                #     return res
             env.exit_scope()
             return res
         
@@ -624,7 +629,7 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
         
         case ReturnStmt(expr):
             # global return_triggered
-            return_triggered = True
+            # return_triggered = True
             return e_(expr) if expr else None
             
         case BinOp("+", left, right): return e_(left) + e_(right)
@@ -647,9 +652,23 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
         
         case If(condition, then_body, else_body): 
             if e_(condition):
-                return e_(then_body) 
+                # exp = e_(then_body)
+                # print("------------------------------------------------")
+                # print("------------------------------------------------")
+                # print(f"EXP: {exp}")
+                # print("------------------------------------------------")
+                # print("------------------------------------------------")
+                # return exp
+                return e_(then_body)
             else:
-                return e_(else_body) if else_body else None
+                # exp = e_(else_body)
+                # print("------------------------------------------------")
+                # print("------------------------------------------------")
+                # print(f"EXP: {exp}")
+                # print("------------------------------------------------")
+                # print("------------------------------------------------")
+                # return exp if else_body else None
+                return e_(else_body)
 
 
 exp = """
@@ -735,8 +754,10 @@ y() * y();
 exp = """
 letFunc fact(n)
 {
-    if (n < 2) then n;
-    n * fact(n - 1);
+    if (n < 2) then
+        return n;
+    else
+        return n * fact(n - 1);
 }
 fact(3);
 """
