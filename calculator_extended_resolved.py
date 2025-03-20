@@ -695,6 +695,20 @@ letFunc fact(n)
 fact(5);
 """
 
+exp = """
+letFunc fun(F, x)
+{
+    return F(x);
+}
+
+letFunc square(x)
+{
+    return x ^ 2;
+}
+
+fun(square, 5);
+"""
+
 print(exp)
 print()
 
