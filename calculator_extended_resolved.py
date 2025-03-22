@@ -83,11 +83,16 @@ class Let(AST):
     var: AST
     e1: Optional[AST]
     
+# @dataclass
+# class LetMut(AST):
+#     var: str
+#     e1: str
+#     e2: str
+
 @dataclass
-class LetMut(AST):
-    var: str
-    e1: str
-    e2: str
+class Assign(AST):
+    var: AST
+    e1: AST
 
 @dataclass
 class Variable(AST):
@@ -324,6 +329,19 @@ def parse(s: str) -> AST:
         return Statements(decls) if decls else Statements([])
     
     def parse_expression():
+        return parse_assignment()
+    
+    def parse_assignment():
+        # need two look ahead
+        # if isinstance(peek(), VariableToken):
+        #     var = Variable(consume(VariableToken).varName)
+        #     if peek() == OperatorToken(":="):
+        #         consume(OperatorToken, ":=")
+        #         e1 = parse_bool()
+        #         return Assign(var, e1)
+        #     else:
+        #         return var
+        # else:
         return parse_bool()
     
     def parse_bool():
@@ -454,6 +472,10 @@ def resolve(program: AST, env: Environment = None) -> AST:
             env.add(varName, i := fresh())
             return Let(Variable(varName, i), re1)
         
+        case Assign(Variable(varName, _), e1):
+            re1 = resolve_(e1)
+            return Assign(Variable(varName, env.get(varName)), re1)
+        
         case LetFun(Variable(varName, _), params, body):
             env.add(varName, i := fresh())
             env.enter_scope()
@@ -533,6 +555,11 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             funObj.env = env.copy()
             return None
         
+        case Assign(Variable(varName, i), e1):
+            v1 = e_(e1)
+            env.update(f"{varName}:{i}", v1)
+            return v1
+        
         case CallFun(Variable(varName, i), args):
             fun = env.get(f"{varName}:{i}")
             rargs = [e_(arg) for arg in args]
@@ -568,7 +595,12 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             
         case BinOp("+", left, right): return e_(left) + e_(right)
         case BinOp("*", left, right): return e_(left) * e_(right)
-        case BinOp("/", left, right): return e_(left) / e_(right)
+        case BinOp("/", left, right): 
+            left_val = e_(left)
+            right_val = e_(right)
+            if isinstance(left_val, int) and isinstance(right_val, int):
+                return left_val // right_val
+            return left_val / right_val
         case BinOp("^", left, right): return e_(left) ** e_(right)
         case BinOp("-", left, right): return e_(left) - e_(right)
         case BinOp("<", left, right): return e_(left) < e_(right)
@@ -709,6 +741,81 @@ letFunc square(x)
 fun(square, 5);
 """
 
+## Euler Project Problem 1
+exp = """
+letFunc F(x, s)
+{
+    if (x = 1000) return s;
+    if (x % 3 = 0 || x % 5 = 0) 
+        return F(x + 1, s + x);
+    return F(x + 1, s);
+}
+
+F(0, 0);
+"""
+
+# Euler Project Problem 2
+exp = """
+letFunc fib(a, b, s)
+{
+    if (a >= 4000000) 
+        return s;
+    if (a % 2 = 0) 
+        return fib(b, a + b, s + a);
+    return fib(b, a + b, s);
+}
+
+fib(0, 1, 0);
+"""
+
+# Euler Project Problem 3
+exp = """
+letFunc prime(n, i)
+{
+    if (i * i > n) 
+        return n;
+    
+    if (n % i = 0)
+        return prime(n / i, i);
+    
+    return prime(n, i + 1);
+}
+
+var n := 600851475143;
+prime(n, 2);
+"""
+
+# Euler Project Problem 4
+exp1 = """
+letFunc isPal(n, rev, org)
+{
+    if (n = 0)
+        return org = rev;
+    return isPal(n/10, rev * 10 + n % 10, org);
+}
+
+letFunc F(i, j, maxPal)
+{
+    if (i < 100) return maxPal;
+    if (j < 100)
+        return F(i - 1, i - 1, maxPal);
+    
+    var prod := i * j;
+    if (prod > maxPal && isPal(prod, 0, prod))
+        maxPal := prod;
+    
+    return F(i, j - 1, maxPal);
+}
+
+F(999, 999, 0);
+"""
+
+exp1 = """
+var x := 5;
+x := 10;
+x;
+"""
+
 print(exp)
 print()
 
@@ -720,4 +827,43 @@ print()
 rexp = resolve(parse(exp))
 pprint(rexp)
 print()
-print(e(rexp))
+# print(e(rexp))
+
+import time
+start_time = time.time()
+print(e(resolve(parse(exp))))
+print("osl. Time:")
+print(f"--- {(time.time() - start_time)} seconds ---")
+# print()
+
+# def largest_prime_factor(n, i):
+#     if i * i > n:
+#         return n
+#     if n % i == 0:
+#         return largest_prime_factor(n // i, i)
+#     return largest_prime_factor(n, i + 1)
+
+# n = 600851475143
+
+# def isPal(n, rev, org):
+#     if n == 0:
+#         return org == rev
+#     return isPal(n // 10, rev * 10 + n % 10, org)
+
+# def F(i, j, maxPal):
+#     if (i < 100):
+#         return maxPal
+#     if (j < 100):
+#         return F(i - 1, i - 1, maxPal)
+#     prod = i * j
+#     if prod > maxPal and isPal(prod, 0, prod):
+#         maxPal = prod
+#     return F(i, j - 1, maxPal)
+
+# start_time = time.time()
+# print(largest_prime_factor(n, 2))
+# print("Python Time:")
+# print(f"--- {(time.time() - start_time)} seconds ---")
+
+
+
