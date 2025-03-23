@@ -2,11 +2,11 @@ from dataclasses import dataclass
 from collections.abc import Iterator
 from more_itertools import peekable
 from pprint import pprint
-from graphviz import Digraph # type: ignore
 from typing import List, Optional
 import sys
+import time
 
-sys.setrecursionlimit(10000)
+sys.setrecursionlimit(100000000)
 
 class Environment:
     envs: List
@@ -82,12 +82,6 @@ class IfUnM(AST):
 class Let(AST):
     var: AST
     e1: Optional[AST]
-    
-# @dataclass
-# class LetMut(AST):
-#     var: str
-#     e1: str
-#     e2: str
 
 @dataclass
 class Assign(AST):
@@ -329,20 +323,17 @@ def parse(s: str) -> AST:
         return Statements(decls) if decls else Statements([])
     
     def parse_expression():
-        return parse_assignment()
-    
-    def parse_assignment():
-        # need two look ahead
-        # if isinstance(peek(), VariableToken):
-        #     var = Variable(consume(VariableToken).varName)
-        #     if peek() == OperatorToken(":="):
-        #         consume(OperatorToken, ":=")
-        #         e1 = parse_bool()
-        #         return Assign(var, e1)
-        #     else:
-        #         return var
-        # else:
-        return parse_bool()
+        # expression -> expB | assignment
+        # first parse the lhs, if it's a variable and next token is ':=' then it's an assignment
+        # otherwise it's an expB so return it as is.
+        ast = parse_bool()
+        if not isinstance(ast, Variable) and peek() == OperatorToken(":="):
+            raise ParseErr(f"Expected variable on the left side of assignment := operator at index {i}")
+        if isinstance(ast, Variable) and peek() == OperatorToken(":="):
+            consume(OperatorToken, ":=")
+            e1 = parse_bool()
+            return Assign(ast, e1)
+        return ast
     
     def parse_bool():
         ast = parse_comparison()
@@ -376,9 +367,6 @@ def parse(s: str) -> AST:
                 case OperatorToken('-'):
                     consume()
                     ast = BinOp('-', ast, parse_mul())
-                case OperatorToken("%"):
-                    consume()
-                    ast = BinOp("%", ast, parse_mul())
                 case _:
                     return ast
  
@@ -392,6 +380,9 @@ def parse(s: str) -> AST:
                 case OperatorToken('/'):
                     consume()
                     ast = BinOp("/", ast, parse_exponentiation())
+                case OperatorToken("%"):
+                    consume()
+                    ast = BinOp("%", ast, parse_exponentiation())
                 case _:
                     return ast
     
@@ -546,7 +537,12 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
         case Let(Variable(varName, i), e1):
             v1 = e_(e1) if e1 else None
             env.add(f"{varName}:{i}", v1)
-            return v1
+            return None
+        
+        case Assign(Variable(varName, i), e1):
+            v1 = e_(e1)
+            env.update(f"{varName}:{i}", v1)
+            return None
         
         case LetFun(Variable(varName, i), params, body):
             # Closure -> Copy of Environment taken along with the declaration!
@@ -554,11 +550,6 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             env.add(f"{varName}:{i}", funObj)
             funObj.env = env.copy()
             return None
-        
-        case Assign(Variable(varName, i), e1):
-            v1 = e_(e1)
-            env.update(f"{varName}:{i}", v1)
-            return v1
         
         case CallFun(Variable(varName, i), args):
             fun = env.get(f"{varName}:{i}")
@@ -785,23 +776,67 @@ var n := 600851475143;
 prime(n, 2);
 """
 
-# Euler Project Problem 4
+exp = """
+var x := 5;
+x := x + 6;
+x;
+"""
+
 exp1 = """
 letFunc isPal(n, rev, org)
 {
-    if (n = 0)
-        return org = rev;
-    return isPal(n/10, rev * 10 + n % 10, org);
+    if (n = 0) return rev = org;
+    
+    return isPal(n/10, rev*10 + n%10, org);
+}
+
+var n := 10;
+
+letFunc f(n)
+{   
+    if (n = 0) return 0;
+    print(n);
+    print(isPal(9999, 0, 9999));
+    return f(n - 1);
+}
+f(n);
+"""
+
+exp1 = """
+var x := 0;
+var n := 121;
+
+x := (x * 10) + (n % 10);
+n := n / 10;
+print(x);
+print(n);
+
+x := (x * 10) + (n % 10);
+n := n / 10;
+print(x);
+print(n);
+
+x := (x * 10) + (n % 10);
+n := n / 10;
+print(x);
+n;
+"""
+
+# Euler Project Problem 4
+exp = """
+letFunc isPal(n, rev, org)
+{
+    if (n = 0) return rev = org;   
+    return isPal(n/10, rev*10 + n%10, org);
 }
 
 letFunc F(i, j, maxPal)
 {
     if (i < 100) return maxPal;
-    if (j < 100)
-        return F(i - 1, i - 1, maxPal);
+    if (j < 100) return F(i - 1, i - 1, maxPal);
     
     var prod := i * j;
-    if (prod > maxPal && isPal(prod, 0, prod))
+    if ((prod > maxPal) && (isPal(prod, 0, prod))) 
         maxPal := prod;
     
     return F(i, j - 1, maxPal);
@@ -810,60 +845,15 @@ letFunc F(i, j, maxPal)
 F(999, 999, 0);
 """
 
-exp1 = """
-var x := 5;
-x := 10;
-x;
-"""
-
-print(exp)
-print()
-
-for i, t in enumerate(lex(exp)):
-    print(f"{i}: {t}")
-print()
-pprint(parse(exp))
-print()
-rexp = resolve(parse(exp))
-pprint(rexp)
-print()
-# print(e(rexp))
-
-import time
-start_time = time.time()
-print(e(resolve(parse(exp))))
-print("osl. Time:")
-print(f"--- {(time.time() - start_time)} seconds ---")
+# print(exp)
 # print()
 
-# def largest_prime_factor(n, i):
-#     if i * i > n:
-#         return n
-#     if n % i == 0:
-#         return largest_prime_factor(n // i, i)
-#     return largest_prime_factor(n, i + 1)
-
-# n = 600851475143
-
-# def isPal(n, rev, org):
-#     if n == 0:
-#         return org == rev
-#     return isPal(n // 10, rev * 10 + n % 10, org)
-
-# def F(i, j, maxPal):
-#     if (i < 100):
-#         return maxPal
-#     if (j < 100):
-#         return F(i - 1, i - 1, maxPal)
-#     prod = i * j
-#     if prod > maxPal and isPal(prod, 0, prod):
-#         maxPal = prod
-#     return F(i, j - 1, maxPal)
-
-# start_time = time.time()
-# print(largest_prime_factor(n, 2))
-# print("Python Time:")
-# print(f"--- {(time.time() - start_time)} seconds ---")
-
-
-
+# for i, t in enumerate(lex(exp)):
+#     print(f"{i}: {t}")
+# print()
+# pprint(parse(exp))
+# print()
+# rexp = resolve(parse(exp))
+# pprint(rexp)
+# print()
+# # print(e(rexp))

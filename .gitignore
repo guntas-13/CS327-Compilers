@@ -1,5 +1,7 @@
 .venv/
 .DS_Store
 .DS_Store
-.vscode/
+**/.vscode/
 __pycache__/
+.pytest_cache/
+.coverage
