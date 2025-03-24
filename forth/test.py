@@ -26,4 +26,4 @@ prog6 = """
 get get concat put
 """
 
-eval(prog5)
+eval(prog6)
