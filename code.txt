@@ -1,0 +1,11 @@
+fn f1()
+{
+    var x := 10;
+    fn f2()
+    {
+        return x;
+    }
+    return f2;
+}
+var msg := f1();
+msg();
