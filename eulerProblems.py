@@ -128,3 +128,60 @@ t2 = time.time() - start_time
 print(f"Python Result: {py_result4}")
 print(f"Python Time: {Fore.CYAN}{t2:.6f} seconds{Style.RESET_ALL}")
 print(f"osl is {int(t1//t2)}x slower than Python")
+
+
+# Euler Problem 5: Smallest multiple
+exp5 = """
+letFunc gcd(a, b) {
+    if (b = 0) return a;
+    return gcd(b, a % b);
+}
+letFunc lcm(a, b) {
+    return a * b / gcd(a, b);
+}
+letFunc F(n, i) {
+    if (i = 1) return n;
+    return F(lcm(n, i - 1), i - 1);
+}
+F(1, 20);
+"""
+t1 = run_test(exp5, 232792560, "Problem 5")
+
+def gcd(a, b):
+    if b == 0: return a
+    return gcd(b, a % b)
+
+def lcm(a, b):
+    return a * b // gcd(a, b)
+
+def F(n, i):
+    if i == 1: return n
+    return F(lcm(n, i - 1), i - 1)
+
+start_time = time.time()
+py_result5 = F(1, 20)
+t2 = time.time() - start_time
+print(f"Python Result: {py_result5}")
+print(f"Python Time: {Fore.CYAN}{t2:.6f} seconds{Style.RESET_ALL}")
+print(f"osl is {int(t1//t2)}x slower than Python")
+
+# Euler Problem 6: Sum square difference
+exp6 = """
+letFunc F(n, sum, sumSq) {
+    if (n = 0) return sum * sum - sumSq;
+    return F(n - 1, sum + n, sumSq + n * n);
+}
+F(100, 0, 0);
+"""
+t1 = run_test(exp6, 25164150, "Problem 6")
+
+def F(n, sum, sumSq):
+    if n == 0: return sum * sum - sumSq
+    return F(n - 1, sum + n, sumSq + n * n)
+
+start_time = time.time()
+py_result6 = F(100, 0, 0)
+t2 = time.time() - start_time
+print(f"Python Result: {py_result6}")
+print(f"Python Time: {Fore.CYAN}{t2:.6f} seconds{Style.RESET_ALL}")
+print(f"osl is {int(t1//t2)}x slower than Python")
