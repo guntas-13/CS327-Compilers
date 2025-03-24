@@ -18,7 +18,7 @@ def run_test(exp, expected, label):
 
 # Euler Problem 1: Sum of multiples of 3 or 5
 exp1 = """
-letFunc F(x, s) {
+fn F(x, s) {
     if (x = 1000) return s;
     if (x % 3 = 0 || x % 5 = 0) 
         return F(x + 1, s + x);
@@ -43,7 +43,7 @@ print(f"osl is {int(t1//t2)}x slower than Python")
 
 # Euler Problem 2: Even Fibonacci numbers
 exp2 = """
-letFunc fib(a, b, s) {
+fn fib(a, b, s) {
     if (a >= 4000000) return s;
     if (a % 2 = 0) 
         return fib(b, a + b, s + a);
@@ -68,7 +68,7 @@ print(f"osl is {int(t1//t2)}x slower than Python")
 
 # Euler Problem 3: Largest prime factor
 exp3 = """
-letFunc prime(n, i) {
+fn prime(n, i) {
     if (i * i > n) return n;
     if (n % i = 0)
         return prime(n / i, i);
@@ -94,11 +94,11 @@ print(f"osl is {int(t1//t2)}x slower than Python")
 
 # Euler Problem 4: Largest palindrome product
 exp4 = """
-letFunc isPal(n, rev, org) {
+fn isPal(n, rev, org) {
     if (n = 0) return rev = org;
     return isPal(n/10, rev*10 + n%10, org);
 }
-letFunc F(i, j, maxPal) {
+fn F(i, j, maxPal) {
     if (i < 100) return maxPal;
     if (j < 100) return F(i - 1, i - 1, maxPal);
     var prod := i * j;
@@ -132,14 +132,14 @@ print(f"osl is {int(t1//t2)}x slower than Python")
 
 # Euler Problem 5: Smallest multiple
 exp5 = """
-letFunc gcd(a, b) {
+fn gcd(a, b) {
     if (b = 0) return a;
     return gcd(b, a % b);
 }
-letFunc lcm(a, b) {
+fn lcm(a, b) {
     return a * b / gcd(a, b);
 }
-letFunc F(n, i) {
+fn F(n, i) {
     if (i = 1) return n;
     return F(lcm(n, i - 1), i - 1);
 }
@@ -167,7 +167,7 @@ print(f"osl is {int(t1//t2)}x slower than Python")
 
 # Euler Problem 6: Sum square difference
 exp6 = """
-letFunc F(n, sum, sumSq) {
+fn F(n, sum, sumSq) {
     if (n = 0) return sum * sum - sumSq;
     return F(n - 1, sum + n, sumSq + n * n);
 }

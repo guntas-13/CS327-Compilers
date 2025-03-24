@@ -174,12 +174,12 @@ def lex(s: str) -> Iterator[Token]:
                 i += 1
                 name = s[start:i]
 
-            if name in {"if", "else", "var", "in", "letFunc", "print", "return"}:
+            if name in {"if", "else", "var", "in", "fn", "print", "return"}:
                 prev_token = KeyWordToken(name)
                 yield prev_token
 
-            # If preceded by `letFunc`, it's a function definition
-            elif isinstance(prev_token, KeyWordToken) and prev_token.op == "letFunc":
+            # If preceded by `fn`, it's a function definition
+            elif isinstance(prev_token, KeyWordToken) and prev_token.op == "fn":
                 prev_token = VariableToken(name)
                 yield prev_token
 
@@ -241,7 +241,7 @@ def parse(s: str) -> AST:
     
     def parse_declaration():
         match peek():
-            case KeyWordToken("letFunc"):
+            case KeyWordToken("fn"):
                 return parse_func()
             case KeyWordToken("var"):
                 return parse_let()
@@ -249,7 +249,7 @@ def parse(s: str) -> AST:
                 return parse_statement()
             
     def parse_func():
-        consume(KeyWordToken, "letFunc")
+        consume(KeyWordToken, "fn")
         func_name = consume(VariableToken)
         
         consume(OperatorToken, "(")
@@ -621,13 +621,13 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
 
 exp = """
 var x := 5;
-letFunc f(y) 
+fn f(y) 
 {
     return x;
 } 
 print(x);
 print(f(2));
-letFunc g(z) 
+fn g(z) 
 { 
     var x := 6;
     return f(z);
@@ -637,7 +637,7 @@ print(g(0));
 
 exp = """
 var x := 5;
-letFunc f(y) 
+fn f(y) 
 {
     return y ^ 2;
 }
@@ -647,7 +647,7 @@ letFunc f(y)
 }
 print(f(x));
 print(x);
-letFunc g(z)
+fn g(z)
 {
     return f(z);
 }
@@ -656,9 +656,9 @@ print(g(3));
 """
 
 exp = """
-letFunc f1()
+fn f1()
 {
-    letFunc f2()
+    fn f2()
     {
         var x := 10;
         return x;
@@ -670,10 +670,10 @@ msg();
 """
 
 exp = """
-letFunc f1()
+fn f1()
 {
     var x := 10;
-    letFunc f2()
+    fn f2()
     {
         return x;
     }
@@ -686,9 +686,9 @@ msg();
 exp = """
 var x := 6;
 
-letFunc F(x)
+fn F(x)
 {
-    letFunc G()
+    fn G()
     {
         return x;
     }
@@ -709,7 +709,7 @@ x;
 """
 
 exp = """
-letFunc fact(n)
+fn fact(n)
 {
     if (n = 0)
         return 1;
@@ -719,12 +719,12 @@ fact(5);
 """
 
 exp = """
-letFunc fun(F, x)
+fn fun(F, x)
 {
     return F(x);
 }
 
-letFunc square(x)
+fn square(x)
 {
     return x ^ 2;
 }
@@ -734,7 +734,7 @@ fun(square, 5);
 
 ## Euler Project Problem 1
 exp = """
-letFunc F(x, s)
+fn F(x, s)
 {
     if (x = 1000) return s;
     if (x % 3 = 0 || x % 5 = 0) 
@@ -747,7 +747,7 @@ F(0, 0);
 
 # Euler Project Problem 2
 exp = """
-letFunc fib(a, b, s)
+fn fib(a, b, s)
 {
     if (a >= 4000000) 
         return s;
@@ -761,7 +761,7 @@ fib(0, 1, 0);
 
 # Euler Project Problem 3
 exp = """
-letFunc prime(n, i)
+fn prime(n, i)
 {
     if (i * i > n) 
         return n;
@@ -783,7 +783,7 @@ x;
 """
 
 exp1 = """
-letFunc isPal(n, rev, org)
+fn isPal(n, rev, org)
 {
     if (n = 0) return rev = org;
     
@@ -792,7 +792,7 @@ letFunc isPal(n, rev, org)
 
 var n := 10;
 
-letFunc f(n)
+fn f(n)
 {   
     if (n = 0) return 0;
     print(n);
@@ -824,13 +824,13 @@ n;
 
 # Euler Project Problem 4
 exp = """
-letFunc isPal(n, rev, org)
+fn isPal(n, rev, org)
 {
     if (n = 0) return rev = org;   
     return isPal(n/10, rev*10 + n%10, org);
 }
 
-letFunc F(i, j, maxPal)
+fn F(i, j, maxPal)
 {
     if (i < 100) return maxPal;
     if (j < 100) return F(i - 1, i - 1, maxPal);
