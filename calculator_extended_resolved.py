@@ -210,8 +210,7 @@ def lex(s: str) -> Iterator[Token]:
                 i += 1
             else:
                 raise ParseErr(f"Unexpected character: {s[i]} at position {i}")
-
-      
+    
 def parse(s: str) -> AST:
     t = peekable(lex(s))
     i = 0
@@ -438,7 +437,6 @@ def parse(s: str) -> AST:
                 raise ParseErr(f"Unexpected token at index {i}")
 
     return parse_program()
-
 
 def resolve(program: AST, env: Environment = None) -> AST:
     if env is None:
