@@ -1,10 +1,6 @@
 from vm import eval
 import sys
 
-if len(sys.argv) != 2:
-    print("Usage: ./run.sh <file>")
-    sys.exit(1)
-
 progFile = sys.argv[1]
 
 with open(f"./{progFile}") as file:
