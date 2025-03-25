@@ -26,4 +26,21 @@ prog6 = """
 get get concat put
 """
 
-eval(prog6)
+prog7 = """
+2 -3 - put
+"""
+
+prog8 = """
+1 2 3 rot / put
+"""
+
+# # dividend - (dividend / divisor) * divisor
+# prog9 = """
+# "Enter dividend: " put get
+# dup
+# "Enter divisor: " put get
+# / dup * - put
+# """
+
+
+eval(prog8)
