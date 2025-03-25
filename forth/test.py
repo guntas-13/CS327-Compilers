@@ -1,4 +1,14 @@
 from vm import eval
+import sys
+
+if len(sys.argv) != 2:
+    print("Usage: ./run.sh <file>")
+    sys.exit(1)
+
+progFile = sys.argv[1]
+
+with open(f"./{progFile}") as file:
+    prog = file.read()
 
 prog1 = """
 "Hello, " get "!" concat concat put
@@ -17,30 +27,17 @@ prog4 = """
 """
 
 prog5 = """
+get get concat put
+"""
+
+prog6 = """
+2 -3 - put
+"""
+
+prog7 = """
 "Enter first number: " put get
 "Enter second number: " put get
 "Their sum is: " put + put
 """
 
-prog6 = """
-get get concat put
-"""
-
-prog7 = """
-2 -3 - put
-"""
-
-prog8 = """
-1 2 3 rot / put
-"""
-
-# # dividend - (dividend / divisor) * divisor
-# prog9 = """
-# "Enter dividend: " put get
-# dup
-# "Enter divisor: " put get
-# / dup * - put
-# """
-
-
-eval(prog8)
+eval(prog)

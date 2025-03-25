@@ -70,12 +70,7 @@ def eval(s: str, stack: Stack = None):
                     b = stack.pop()
                     a = stack.pop()
                     if isinstance(a, (int, float)) and isinstance(b, (int, float)):
-                        if b == 0:
-                            raise ValueError("Division by zero")
-                        if isinstance(a, int) and isinstance(b, int):
-                            stack.push(a // b)
-                        else:
-                            stack.push(a / b)
+                        stack.push(a / b)
                     else:
                         raise ValueError("Division requires numbers")
                     
@@ -89,6 +84,8 @@ def eval(s: str, stack: Stack = None):
                     
                 elif val == "get":
                     s = input()
+                    
+                    # again do the lexer like check here!
                     f = None
                     i = 0
                     while i < len(s):
