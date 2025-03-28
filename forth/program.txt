@@ -1,1 +1,1 @@
-get get concat put
+[ "guntas" true 1 get ] dup 0 nth put spread put put put put

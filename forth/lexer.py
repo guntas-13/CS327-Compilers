@@ -8,14 +8,19 @@ class Token:
 @dataclass
 class StringToken(Token):
     val: str
-
 @dataclass
 class NumberToken(Token):
     val: str
     
 @dataclass
+class BooleanToken(Token):
+    value: str
+@dataclass
 class WordToken(Token):
     val: str
+@dataclass
+class BooleanOperatorToken(Token):
+    op: str
 
 def checkInputStr(i:int, s: str) -> Tuple[int, str]:
     i += 1
@@ -55,7 +60,6 @@ def checkInputNum(i:int, s: str) -> Tuple[int, str]:
         i += 1
     num_str = s[start:i]
     return i, num_str
-        
 
 def lex(s: str) -> List[Token]:
     i = 0
@@ -76,14 +80,20 @@ def lex(s: str) -> List[Token]:
             i, num_str = checkInputNum(i, s)
             tokens.append(NumberToken(num_str))
         
-        elif s[i].isalpha() or s[i] in {'+', '-', '*', '/', '^'}:
+        elif s[i].isalpha() or s[i] in {'+', '-', '*', '/', '^', "<", ">", "<=", ">=", "=", "!=", '[', ']'}:
             start = i
             while i < len(s) and not s[i].isspace() and s[i] != '"':
                 i += 1
             word = s[start:i]
             if any(c.isdigit() for c in word) and not word.isdigit():
                 raise ValueError(f"Invalid word '{word}' at position {start}")
-            tokens.append(WordToken(word))
+            else:
+                if word in {"true", "false"}:
+                    tokens.append(BooleanToken(word))
+                elif word in {"and", "or", "not", "xor"}:
+                    tokens.append(BooleanOperatorToken(word))
+                else:
+                    tokens.append(WordToken(word))
 
         else:
             raise ValueError(f"Unexpected character '{s[i]}' at position {i}")
