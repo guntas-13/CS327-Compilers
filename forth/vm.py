@@ -1,18 +1,5 @@
 from lexer import *
 from typing import List
-
-class ListObject:
-    def __init__(self, items: List):
-        self.items = items
-
-    def __repr__(self):
-        return f"ListObject({self.items})"
-
-    def __getitem__(self, index):
-        return self.items[index]
-    
-    def __len__(self):
-        return len(self.items)
 class Stack:
     def __init__(self):
         self.stack = []
@@ -35,7 +22,34 @@ class Stack:
     
     def __repr__(self):
         return f"Stack({self.stack})"
+
+@dataclass
+class Object:
+    pass
+@dataclass
+class NumberObj(Object):
+    val: str
+
+@dataclass
+class BooleanObj(Object):
+    val: str
+
+@dataclass
+class StringObj(Object):
+    val: str
     
+@dataclass
+class ListObject(Object):
+    val: List[Object]
+    
+    def __len__(self):
+        return len(self.val)
+    
+    def __getitem__(self, key):
+        return self.val[key]
+    
+    def __repr__(self):
+        return f"ListObject({self.val})"
     
 def eval(s: str, stack: Stack = None):
     if stack is None:
@@ -47,54 +61,54 @@ def eval(s: str, stack: Stack = None):
         match token:
             case NumberToken(val):
                 if '.' in val:
-                    stack.push(float(val))
+                    stack.push(NumberObj(float(val)))
                 else:
-                    stack.push(int(val))
+                    stack.push(NumberObj(int(val)))
             
             case BooleanToken(val):
-                stack.push(BooleanToken(val))
+                stack.push(BooleanObj(val))
             
             case StringToken(val):
-                stack.push(val)
+                stack.push(StringObj(val))
                                  
             case WordToken(val):
                 if val == "+":
                     b = stack.pop()
                     a = stack.pop()
-                    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
-                        stack.push(a + b)
+                    if isinstance(a, NumberObj) and isinstance(b, NumberObj):
+                        stack.push(NumberObj(a.val + b.val))
                     else:
                         raise ValueError("Addition requires numbers")
 
                 elif val == "-":
                     b = stack.pop()
                     a = stack.pop()
-                    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
-                        stack.push(a - b)
+                    if isinstance(a, NumberObj) and isinstance(b, NumberObj):
+                        stack.push(NumberObj(a.val - b.val))
                     else:
                         raise ValueError("Subtraction requires numbers")
                     
                 elif val == "*":
                     b = stack.pop()
                     a = stack.pop()
-                    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
-                        stack.push(a * b)
+                    if isinstance(a, NumberObj) and isinstance(b, NumberObj):
+                        stack.push(NumberObj(a.val * b.val))
                     else:
                         raise ValueError("Multiplication requires numbers")
                     
                 elif val == "/":
                     b = stack.pop()
                     a = stack.pop()
-                    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
-                        stack.push(a / b)
+                    if isinstance(a, NumberObj) and isinstance(b, NumberObj):
+                        stack.push(NumberObj(a.val / b.val))
                     else:
                         raise ValueError("Division requires numbers")
                     
                 elif val == "^":
                     b = stack.pop()
                     a = stack.pop()
-                    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
-                        stack.push(a ** b)
+                    if isinstance(a, NumberObj) and isinstance(b, NumberObj):
+                        stack.push(NumberObj(a.val ** b.val))
                     else:
                         raise ValueError("Exponentiation requires numbers")
                 
@@ -102,55 +116,55 @@ def eval(s: str, stack: Stack = None):
                     b = stack.pop()
                     a = stack.pop()
                     # a and b have to numbers but push BooleanToken
-                    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
-                        if a > b:
-                            stack.push(BooleanToken("true"))
+                    if isinstance(a, NumberObj) and isinstance(b, NumberObj):
+                        if a.val > b.val:
+                            stack.push(BooleanObj("true"))
                         else:
-                            stack.push(BooleanToken("false"))
+                            stack.push(BooleanObj("false"))
                     else:
                         raise ValueError("Greater than requires numbers")
                 
                 elif val == "<":
                     b = stack.pop()
                     a = stack.pop()
-                    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
-                        if a < b:
-                            stack.push(BooleanToken("true"))
+                    if isinstance(a, NumberObj) and isinstance(b, NumberObj):
+                        if a.val < b.val:
+                            stack.push(BooleanObj("true"))
                         else:
-                            stack.push(BooleanToken("false"))
+                            stack.push(BooleanObj("false"))
                     else:
                         raise ValueError("Less than requires numbers")
                 
                 elif val == ">=":
                     b = stack.pop()
                     a = stack.pop()
-                    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
-                        if a >= b:
-                            stack.push(BooleanToken("true"))
+                    if isinstance(a, NumberObj) and isinstance(b, NumberObj):
+                        if a.val >= b.val:
+                            stack.push(BooleanObj("true"))
                         else:
-                            stack.push(BooleanToken("false"))
+                            stack.push(BooleanObj("false"))
                     else:
                         raise ValueError("Greater than or equal requires numbers")
                 
                 elif val == "<=":
                     b = stack.pop()
                     a = stack.pop()
-                    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
-                        if a <= b:
-                            stack.push(BooleanToken("true"))
+                    if isinstance(a, NumberObj) and isinstance(b, NumberObj):
+                        if a.val <= b.val:
+                            stack.push(BooleanObj("true"))
                         else:
-                            stack.push(BooleanToken("false"))
+                            stack.push(BooleanObj("false"))
                     else:
                         raise ValueError("Less than or equal requires numbers")
                 
                 elif val == "=":
                     b = stack.pop()
                     a = stack.pop()
-                    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
-                        if a == b:
-                            stack.push(BooleanToken("true"))
+                    if isinstance(a, NumberObj) and isinstance(b, NumberObj):
+                        if a.val == b.val:
+                            stack.push(BooleanObj("true"))
                         else:
-                            stack.push(BooleanToken("false"))
+                            stack.push(BooleanObj("false"))
                     else:
                         raise ValueError("Equality requires numbers")
                     
@@ -165,11 +179,11 @@ def eval(s: str, stack: Stack = None):
 
                         if char == '"':
                             i, f = checkInputStr(i, s)
-                            f = StringToken(f)
+                            f = StringObj(f)
                         
                         elif char.isdigit() or (char == '-' and i + 1 < len(s) and s[i + 1].isdigit()):
                             i, f = checkInputNum(i, s)
-                            f = NumberToken(f)
+                            f = NumberObj(f)
                         
                         # checking for BooleanToken same as Lexer
                         elif char.isalpha():
@@ -178,30 +192,25 @@ def eval(s: str, stack: Stack = None):
                                 i += 1
                             f = s[start:i]
                             if f in {"true", "false"}:
-                                f = BooleanToken(f)
+                                f = BooleanObj(f)
                             else:
                                 raise ValueError("get says: Neither a number nor a string")
                         
                         else:
                             raise ValueError("get says: Neither a number nor a string")
 
-                    if isinstance(f, NumberToken):
+                    if isinstance(f, NumberObj):
                         if '.' in f.val:
-                            stack.push(float(f.val))
+                            stack.push(NumberObj(float(f.val)))
                         else:
-                            stack.push(int(f.val))
-                    elif isinstance(f, StringToken):
-                        stack.push(f.val)
+                            stack.push(NumberObj(int(f.val)))
                     else:
-                        # BooleanToken
+                        # BooleanObj
                         stack.push(f)
                         
                 elif val == "put":
-                    value = stack.pop()
-                    if isinstance(value, BooleanToken):
-                        print(value.value)
-                    else:
-                        print(value)
+                    obj = stack.pop()
+                    print(obj.val)
                     
                 elif val == "pop":
                     stack.pop()
@@ -232,24 +241,24 @@ def eval(s: str, stack: Stack = None):
                         if not stack:
                             raise ValueError("Unmatched [")
                         x = stack.pop()
-                        if isinstance(x, str) and x == "[":
+                        if isinstance(x, StringObj) and x.val == "[":
                             break
                         l.append(x)
                     stack.push(ListObject(l[::-1]))
                 
                 elif val == "[":
-                    stack.push("[")
+                    stack.push(StringObj(val))
                 
                 elif val == "nth":
                     n = stack.pop()
                     l = stack.pop()
-                    if not isinstance(n, int):
-                        raise ValueError("nth requires an integer")
+                    if not isinstance(n.val, int):
+                        raise ValueError("nth requires an Integer")
                     if not isinstance(l, ListObject):
-                        raise ValueError("nth requires a list")
-                    if n < 0 or n >= len(l):
+                        raise ValueError("nth requires a List")
+                    if n.val < 0 or n.val >= len(l):
                         raise ValueError("Index out of bounds")
-                    stack.push(l[n])
+                    stack.push(l[n.val])
                 
                 elif val == "spread":
                     l = stack.pop()
@@ -257,7 +266,7 @@ def eval(s: str, stack: Stack = None):
                         raise ValueError("spread requires a list")
                     for item in l:
                         stack.push(item)
-                
+        
                 else:
                     raise ValueError(f"Unknown word: {val}")
                 
@@ -265,32 +274,33 @@ def eval(s: str, stack: Stack = None):
                 if op == "and":
                     b = stack.pop()
                     a = stack.pop()
-                    if isinstance(a, BooleanToken) and isinstance(b, BooleanToken):
-                        stack.push(BooleanToken("true" if a.value == "true" and b.value == "true" else "false"))
+                    if isinstance(a, BooleanObj) and isinstance(b, BooleanObj):
+                        stack.push(BooleanObj("true" if a.val == "true" and b.val == "true" else "false"))
                     else:
                         raise ValueError("and requires two booleans")
                     
                 elif op == "or":
                     b = stack.pop()
                     a = stack.pop()
-                    if isinstance(a, BooleanToken) and isinstance(b, BooleanToken):
-                        stack.push(BooleanToken("true" if a.value == "true" or b.value == "true" else "false"))
+                    if isinstance(a, BooleanObj) and isinstance(b, BooleanObj):
+                        stack.push(BooleanObj("true" if a.val == "true" or b.val == "true" else "false"))
                     else:
                         raise ValueError("or requires two booleans")
                     
                 elif op == "not":
                     a = stack.pop()
-                    if isinstance(a, BooleanToken):
-                        stack.push(BooleanToken("true" if a.value == "false" else "false"))
+                    if isinstance(a, BooleanObj):
+                        stack.push(BooleanObj("true" if a.val == "false" else "false"))
                     else:
                         raise ValueError("not requires a boolean")
                 
                 elif op == "xor":
                     b = stack.pop()
                     a = stack.pop()
-                    if isinstance(a, BooleanToken) and isinstance(b, BooleanToken):
-                        stack.push(BooleanToken("true" if a.value != b.value else "false"))
+                    if isinstance(a, BooleanObj) and isinstance(b, BooleanObj):
+                        stack.push(BooleanObj("true" if a.val != b.value else "false"))
                     else:
                         raise ValueError("xor requires two booleans")
+                
                 else:
                     raise ValueError(f"Unknown boolean operator: {op}")
