@@ -81,7 +81,7 @@ def lex(s: str) -> List[Token]:
             i, num_str = checkInputNum(i, s)
             tokens.append(NumberToken(num_str))
         
-        elif s[i].isalpha() or s[i] in {'+', '-', '*', '/', '^', "<", ">", "=", '!', '[', ']'}:
+        elif s[i].isalpha() or s[i] in {'+', '-', '*', '/', '^', "<", ">", "=", '!', '[', ']', '{', '}'}:
             start = i
             while i < len(s) and not s[i].isspace() and s[i] != '"':
                 i += 1

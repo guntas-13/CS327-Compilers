@@ -50,14 +50,32 @@ class ListObject(Object):
     
     def __repr__(self):
         return f"ListObject({self.val})"
+
+@dataclass
+class Token:
+    pass
+@dataclass
+class ProgramObject(Token):
+    prog: List[Token]
     
-def eval(s: str, stack: Stack = None):
+    def __len__(self):
+        return len(self.prog)
+    
+    def __getitem__(self, key):
+        return self.prog[key]
+    
+    def __repr__(self):
+        return f"ProgramObject({self.prog})"
+
+def eval(tokens: List, stack: Stack = None):
     if stack is None:
         stack = Stack()
         
-    tokens = lex(s)
-    
-    for token in tokens:
+    # tokens = lex(s)
+    i = 0
+    while i < len(tokens):
+        token = tokens[i]
+        i += 1
         match token:
             case NumberToken(val):
                 if '.' in val:
@@ -70,7 +88,7 @@ def eval(s: str, stack: Stack = None):
             
             case StringToken(val):
                 stack.push(StringObj(val))
-                                 
+                            
             case WordToken(val):
                 if val == "+":
                     b = stack.pop()
@@ -266,10 +284,59 @@ def eval(s: str, stack: Stack = None):
                         raise ValueError("spread requires a list")
                     for item in l:
                         stack.push(item)
-        
+
+                elif val == "print":
+                    print(stack.peek().val)
+                
+                elif val == "len":
+                    l = stack.pop()
+                    if isinstance(l, ListObject):
+                        stack.push(NumberObj(len(l)))
+                    else:
+                        raise ValueError("len requires a List")
+                
+                elif val == "listn":
+                    n = stack.pop()
+                    if not isinstance(n.val, int):
+                        raise ValueError("listn requires an Integer")
+                    
+                    l = []
+                    for _ in range(n.val):
+                        l.append(stack.pop())
+                        
+                    stack.push(ListObject(l[::-1]))
+                
+                elif val == "list":
+                    l = []
+                    while stack:
+                        l.append(stack.pop())
+                    stack.push(ListObject(l[::-1]))
+                
+                elif val == "{":
+                    prog = []
+                    while i < len(tokens):
+                        token = tokens[i]
+                        if isinstance(token, WordToken) and token.val == "}":
+                            break
+                        prog.append(token)
+                        i += 1
+                    
+                    stack.push(ProgramObject(prog))
+                    i += 1
+                
+                elif val == "}":
+                    raise ValueError("Unmatched }")
+                       
+                elif val == "run":
+                    prog = stack.pop()
+                    if isinstance(prog, ProgramObject):
+                        eval(prog.prog, stack)
+                    else:
+                        raise ValueError("run requires a program")
+                    
                 else:
                     raise ValueError(f"Unknown word: {val}")
-                
+                  
             case BooleanOperatorToken(op):
                 if op == "and":
                     b = stack.pop()
@@ -302,5 +369,73 @@ def eval(s: str, stack: Stack = None):
                     else:
                         raise ValueError("xor requires two booleans")
                 
+                elif op == "b=":
+                    b = stack.pop()
+                    a = stack.pop()
+                    if isinstance(a, BooleanObj) and isinstance(b, BooleanObj):
+                        stack.push(BooleanObj("true" if a.val == b.val else "false"))
+                    else:
+                        raise ValueError("b= requires two booleans")
+                
+                elif op == "b!=":
+                    b = stack.pop()
+                    a = stack.pop()
+                    if isinstance(a, BooleanObj) and isinstance(b, BooleanObj):
+                        stack.push(BooleanObj("true" if a.val != b.val else "false"))
+                    else:
+                        raise ValueError("b!= requires two booleans")
+                
                 else:
                     raise ValueError(f"Unknown boolean operator: {op}")
+            
+            case StringOperatorToken(op):
+                if op == "s=":
+                    b = stack.pop()
+                    a = stack.pop()
+                    if isinstance(a, StringObj) and isinstance(b, StringObj):
+                        stack.push(BooleanObj("true" if a.val == b.val else "false"))
+                    else:
+                        raise ValueError("s= requires two strings")
+                
+                elif op == "s!=":
+                    b = stack.pop()
+                    a = stack.pop()
+                    if isinstance(a, StringObj) and isinstance(b, StringObj):
+                        stack.push(BooleanObj("true" if a.val != b.val else "false"))
+                    else:
+                        raise ValueError("s!= requires two strings")
+                
+                elif op == "lex<":
+                    b = stack.pop()
+                    a = stack.pop()
+                    if isinstance(a, StringObj) and isinstance(b, StringObj):
+                        stack.push(BooleanObj("true" if a.val < b.val else "false"))
+                    else:
+                        raise ValueError("lex< requires two strings")
+                    
+                elif op == "lex>":
+                    b = stack.pop()
+                    a = stack.pop()
+                    if isinstance(a, StringObj) and isinstance(b, StringObj):
+                        stack.push(BooleanObj("true" if a.val > b.val else "false"))
+                    else:
+                        raise ValueError("lex> requires two strings")
+                
+                elif op == "lex<=":
+                    b = stack.pop()
+                    a = stack.pop()
+                    if isinstance(a, StringObj) and isinstance(b, StringObj):
+                        stack.push(BooleanObj("true" if a.val <= b.val else "false"))
+                    else:
+                        raise ValueError("lex<= requires two strings")
+                
+                elif op == "lex>=":
+                    b = stack.pop()
+                    a = stack.pop()
+                    if isinstance(a, StringObj) and isinstance(b, StringObj):
+                        stack.push(BooleanObj("true" if a.val >= b.val else "false"))
+                    else:
+                        raise ValueError("lex<= requires two strings")
+
+                else:
+                    raise ValueError(f"Unknown string operator: {op}")

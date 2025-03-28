@@ -5,7 +5,8 @@ import sys
 progFile = sys.argv[1]
 
 with open(f"./{progFile}") as file:
-    prog = file.read()
+    code = file.read()
+    prog = lex(code)
 
 prog1 = """
 "Hello, " get "!" concat concat put
@@ -83,6 +84,18 @@ prog18 = """
 
 prog19 = """
 [ "guntas" true 1 get ] spread put put put put
+"""
+
+prog20 = """
+1 [ 1 3 4 ] 3.34 4 false "true" list put
+"""
+
+prog21 = """
+1 [ 1 3 4 ] 3.34 4 false "true" 3 listn dup put list put
+"""
+
+prog22 = """
+1 [ 1 3 4 ] len dup put [ 1 2 ] 3.34 4 false "true" 3 listn dup put list put
 """
 
 # for t in lex(prog19):
