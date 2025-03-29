@@ -1,1 +1,1 @@
-1 [ 1 3 4 ] len print [ 1 2 ] 3.34 4 false "true" 3 listn print list put
+"apple" "banana" lex> print

@@ -98,8 +98,69 @@ prog22 = """
 1 [ 1 3 4 ] len dup put [ 1 2 ] 3.34 4 false "true" 3 listn dup put list put
 """
 
+prog23 = """
+{ "Hello" print }
+"""
+
+prog24 = """
+{ "Hello" print } run
+"""
+
+prog25 = """
+get 0 >
+{ "Positive" print }
+{ "Not positive" print }
+if
+"""
+
+prog26 = """
+10 { "." print } repeat
+"""
+
+prog27 = """
+10 { dup 0 > } { dup print dec } while
+"""
+
+prog28 = """
+1 { dup 5 <= } { dup print inc } while
+"""
+
+prog29 = """
+"apple" "banana" lex< print
+"""
+
+prog30 = """
+"hello" "hello" s= print
+"""
+
+prog30 = """
+"world" "hello" s!= print
+"""
+
+prog31 = """
+true false b!= print
+"""
+
+prog32 = """
+true true b= print
+"""
+
+prog33 = """
+"apple" "banana" lex<= print
+"""
+
+prog34 = """
+"apple" "banana" lex>= print
+"""
+
+prog35 = """
+"apple" "banana" lex> print
+"""
+
 # for t in lex(prog19):
 #     print(t)
 # eval(prog19)
+# for t in prog:
+#     print(t)
 
 eval(prog)

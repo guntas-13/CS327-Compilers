@@ -191,24 +191,24 @@ def eval(tokens: List, stack: Stack = None):
                     
                     # again do the lexer like check here!
                     f = None
-                    i = 0
-                    while i < len(s):
-                        char = s[i]
+                    j = 0
+                    while j < len(s):
+                        char = s[j]
 
                         if char == '"':
-                            i, f = checkInputStr(i, s)
+                            j, f = checkInputStr(j, s)
                             f = StringObj(f)
                         
-                        elif char.isdigit() or (char == '-' and i + 1 < len(s) and s[i + 1].isdigit()):
-                            i, f = checkInputNum(i, s)
+                        elif char.isdigit() or (char == '-' and j + 1 < len(s) and s[j + 1].isdigit()):
+                            j, f = checkInputNum(j, s)
                             f = NumberObj(f)
                         
                         # checking for BooleanToken same as Lexer
                         elif char.isalpha():
-                            start = i
-                            while i < len(s) and not s[i].isspace() and s[i] != '"':
-                                i += 1
-                            f = s[start:i]
+                            start = j
+                            while j < len(s) and not s[j].isspace() and s[j] != '"':
+                                j += 1
+                            f = s[start:j]
                             if f in {"true", "false"}:
                                 f = BooleanObj(f)
                             else:
@@ -334,6 +334,62 @@ def eval(tokens: List, stack: Stack = None):
                     else:
                         raise ValueError("run requires a program")
                     
+                elif val == "if":
+                    else_prog = stack.pop()
+                    if_prog = stack.pop()
+                    cond = stack.pop()
+                    if not isinstance(if_prog, ProgramObject) or not isinstance(else_prog, ProgramObject):
+                        raise ValueError("if requires a program")
+                    if isinstance(cond, BooleanObj):
+                        if cond.val == "true":
+                            eval(if_prog.prog, stack)
+                        else:
+                            eval(else_prog.prog, stack) 
+                    
+                elif val == "repeat":
+                    procedure = stack.pop()
+                    if not isinstance(procedure, ProgramObject):
+                        raise ValueError("repeat requires a program")
+                    n = stack.pop()
+                    if not isinstance(n.val, int):
+                        raise ValueError("repeat requires an Integer")
+                    
+                    if n.val < 0:
+                        raise ValueError("repeat requires a positive Integer")
+                    
+                    for _ in range(n.val):
+                        eval(procedure.prog, stack)
+                    
+                elif val == "while":
+                    procedure = stack.pop()
+                    cond_procedure = stack.pop()
+                    if not isinstance(procedure, ProgramObject) or not isinstance(cond_procedure, ProgramObject):
+                        raise ValueError("while requires both the body and the condition to be a procedure")
+                    
+                    # evaluate the condition
+                    eval(cond_procedure.prog, stack)
+                    cond = stack.pop()
+                    
+                    if not isinstance(cond, BooleanObj):
+                        raise ValueError("while condition must evaluate to a boolean")
+                    
+                    while cond.val == "true":
+                        eval(procedure.prog, stack)
+                        eval(cond_procedure.prog, stack)
+                        cond = stack.pop() 
+                    
+                elif val == "dec":
+                    n = stack.pop()
+                    if not isinstance(n, NumberObj):
+                        raise ValueError("dec requires a number")
+                    stack.push(NumberObj(n.val - 1))
+                
+                elif val == "inc":
+                    n = stack.pop()
+                    if not isinstance(n, NumberObj):
+                        raise ValueError("inc requires a number")
+                    stack.push(NumberObj(n.val + 1))
+                                    
                 else:
                     raise ValueError(f"Unknown word: {val}")
                   
