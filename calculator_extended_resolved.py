@@ -153,6 +153,10 @@ class VariableToken(Token):
     varName: str
 
 @dataclass
+class StringToken(Token):
+    val: str
+
+@dataclass
 class FunCallToken(Token):
     funName: str
 
@@ -191,7 +195,60 @@ def lex(s: str) -> Iterator[Token]:
             else:
                 prev_token = VariableToken(name)
                 yield prev_token
-
+        
+        elif s[i] == '/' and i + 1 < len(s) and s[i + 1] == '/':
+            i += 2
+            while i < len(s) and s[i] != '\n':
+                i += 1
+        
+        elif s[i] == '"':
+            i += 1
+            start = i
+            string = ""
+            while i < len(s):
+                char = s[i]
+                if char == '"':
+                    i += 1
+                    yield StringToken(string)
+                    break
+                if char == '\\':
+                    i += 1
+                    if i >= len(s):
+                        raise ValueError("Unterminated string")
+                    escape_char = s[i]
+                    if escape_char == '"':
+                        string += '"'
+                    elif escape_char == '\\':
+                        string += '\\'
+                    elif escape_char == '/':
+                        string += '/'
+                    elif escape_char == 'b':
+                        string += '\b'
+                    elif escape_char == 'f':
+                        string += '\f'
+                    elif escape_char == 'n':
+                        string += '\n'
+                    elif escape_char == 'r':
+                        string += '\r'
+                    elif escape_char == 't':
+                        string += '\t'
+                    elif escape_char == 'u':
+                        if i + 4 >= len(s):
+                            raise ValueError("Unterminated unicode escape sequence")
+                        hex_value = s[i+1:i+5]
+                        if all(c in '0123456789abcdefABCDEF' for c in hex_value):
+                            string += chr(int(hex_value, 16))
+                            i += 4
+                        else:
+                            raise ValueError(f"Invalid unicode escape sequence at index {i}: \\u{hex_value}")
+                    else:
+                        raise ValueError(f"Invalid escape character at index {i}: \\{escape_char}")
+                else:
+                    string += char
+                i += 1
+            else:
+                raise ValueError("Unterminated string")
+        
         elif s[i].isdigit():
             start = i
             while i < len(s) and (s[i].isdigit() or s[i] == '.'):
@@ -402,6 +459,10 @@ def parse(s: str) -> AST:
                 val = float(v) if '.' in v else int(v)
                 return Number(val)
             
+            case StringToken(v):
+                consume()
+                return StringLiteral(v)
+            
             case VariableToken(varName):
                 consume()
                 return Variable(varName)
@@ -455,6 +516,9 @@ def resolve(program: AST, env: Environment = None) -> AST:
         
         case Number(_) as N:
             return N
+        
+        case StringLiteral(_) as S:
+            return S
         
         case Let(Variable(varName, _), e1):
             re1 = resolve_(e1) if e1 else None
@@ -527,6 +591,9 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             return res
         
         case Number(val):
+            return val
+        
+        case StringLiteral(val):
             return val
         
         case Variable(varName, i):

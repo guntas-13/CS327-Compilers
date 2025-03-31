@@ -26,4 +26,7 @@ fn bar(func, i)
 
 var msg := f1();
 print(foo(msg()));
-bar(foo, msg());
+// print(bar(foo, msg()));
+
+var y := "Guntas";
+y;
