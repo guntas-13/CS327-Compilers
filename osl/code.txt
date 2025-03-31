@@ -1,0 +1,32 @@
+var x := 5;
+fn f1()
+{
+    x := 10;
+    fn f2()
+    {
+        return x;
+    }
+    return f2;
+}
+print(x);
+var msg1 := f1();
+print(msg1());
+print(x);
+
+
+fn foo(x)
+{
+    return x - 5;
+}
+
+fn bar(func, i)
+{
+    return func(i) * 7;
+}
+
+var msg := f1();
+print(foo(msg()));
+// print(bar(foo, msg()));
+
+var y := "Guntas";
+y;
