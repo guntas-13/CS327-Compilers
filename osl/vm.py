@@ -49,7 +49,7 @@ class Environment:
 class FunObj:
     entry: int
     args: Optional[List[int]]
-    env: Environment
+    # env: Environment
 
 @dataclass
 class CallFrame:
@@ -93,7 +93,7 @@ class StackVM:
         self.call_stack: List[CallFrame] = []
         self.STACK_SIZE = 4096
         c = CallFrame(
-            f=FunObj(entry=0, args=[-1], env=None), # -1 for main() function
+            f=FunObj(entry=0, args=[-1]), # -1 for main() function
             env=code.env.copy(),
             ret=None)
         self.call_stack.append(c)
@@ -285,7 +285,7 @@ class StackVM:
                 # we will have N as the number of arguments and then followed by N arguments
                 # assume again that these are 4 bytes each
                 args = []
-                call_env = fn.env.copy()
+                call_env = self.current_env().copy()
                 call_env.enter_scope()
                 if self.pc + 5 > len(self.code.bytecode):
                     raise RuntimeError("Invalid CALL instruction")
@@ -325,14 +325,11 @@ class StackVM:
                 
 # fnobj =  FunObj(
 #     entry=3,
-#     args=[2, 3],
-#     env=None
+#     args=[2, 3]
 # )
 
 # env = Environment()
 # env.add(1, fnobj)
-
-# fnobj.env = env.copy()
 
 # code = Code(
 #     bytecode=bytearray([
@@ -366,13 +363,10 @@ class StackVM:
 fnobj =  FunObj(
     entry=3,
     args=[2],
-    env=None
 )
 
 env = Environment()
 env.add(1, fnobj)
-
-fnobj.env = env.copy()
 
 code = Code(
     bytecode=bytearray([
