@@ -1,4 +1,4 @@
-from calculator_extended_resolved import parse, e, resolve
+from osl_package import parse, e, resolve
 from pprint import pprint
 from colorama import Fore, Style
 import sys

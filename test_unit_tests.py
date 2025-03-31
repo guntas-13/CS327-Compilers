@@ -1,5 +1,5 @@
 import pytest
-from calculator_extended_resolved import parse, e, resolve
+from osl_package import parse, e, resolve
 from io import StringIO
 import sys
 
