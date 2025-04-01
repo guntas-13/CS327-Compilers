@@ -31,7 +31,8 @@ class Environment:
         for env in reversed(self.envs):
             if var in env:
                 return env[var]
-        raise ValueError(f"Variable {var} not defined")
+        # raise ValueError(f"Variable {var} not defined")
+        return None
     
     def update(self, var: int, val: Value):
         for env in reversed(self.envs):
@@ -53,7 +54,6 @@ class FunObj:
 
 @dataclass
 class CallFrame:
-    f: FunObj
     env: Environment
     ret: int
     
@@ -93,7 +93,6 @@ class StackVM:
         self.call_stack: List[CallFrame] = []
         self.STACK_SIZE = 4096
         c = CallFrame(
-            f=FunObj(entry=0, args=[-1]), # -1 for main() function
             env=code.env.copy(),
             ret=None)
         self.call_stack.append(c)
@@ -271,41 +270,36 @@ class StackVM:
                 self.pc += 1
             
             elif op == Opcode.CALL:
-                if self.pc + 4 > len(self.code.bytecode):
+                """
+                The stack is as follows:
+                Function address
+                Number of arguments
+                Argument 1's val
+                Argument 1's id
+                ...
+                (All are 4 bytes)
+                """
+                if self.pc + 1 > len(self.code.bytecode):
                     raise RuntimeError("Invalid CALL instruction")
                 
-                id = struct.unpack('<i', self.code.bytecode[self.pc + 1:self.pc + 5])[0]
-                try:
-                    fn = self.current_env().get(id)
-                except ValueError:
-                    raise RuntimeError(f"Function with id {id} not found")
-                
-                if not isinstance(fn, FunObj):
-                    raise TypeError("Invalid type for CALL")
-                # we will have N as the number of arguments and then followed by N arguments
-                # assume again that these are 4 bytes each
-                args = []
+                addr = self.pop().val
                 call_env = self.current_env().copy()
                 call_env.enter_scope()
-                if self.pc + 5 > len(self.code.bytecode):
-                    raise RuntimeError("Invalid CALL instruction")
                 num_args = self.pop().val
-        
-                # print(num_args)
-                for i in range(num_args):
-                    # print(i, fn.args[i])
-                    args.append(self.pop())
-                    call_env.add(fn.args[i], args[i])
+
+                for _ in range(num_args):
+                    val = self.pop()
+                    id = self.pop().val
+                    call_env.add(id, val)
                     
-                self.pc += 5
+                self.pc += 1
                 
                 c = CallFrame(
-                    f = fn,
                     env = call_env,
                     ret = self.pc
                 )
                 self.call_stack.append(c)
-                self.pc = fn.entry
+                self.pc = addr
                 
             elif op == Opcode.RETURN:
                 if not self.call_stack:
@@ -331,66 +325,72 @@ class StackVM:
 # env = Environment()
 # env.add(1, fnobj)
 
-# code = Code(
-#     bytecode=bytearray([
-#         Opcode.JUMP, 0x0C, 0x00,
-#         Opcode.LOAD, 0x02, 0x00,0x00,0x00,
-#         Opcode.LOAD, 0x03, 0x00,0x00,0x00,
-#         Opcode.ADD,
-#         Opcode.RETURN,
-#         Opcode.PUSH_INT, 0x05,0x00,0x00,0x00,
-#         Opcode.PUSH_INT, 0x03,0x00,0x00,0x00,
-#         Opcode.PUSH_INT, 0x02,0x00,0x00,0x00,
-#         Opcode.CALL, 0x01,0x00,0x00,0x00,
-#         Opcode.HALT
-#         ]),
-#     env=env
-# )
+# From here
 
-# stack = StackVM(code)
-# result = stack.execute()
-# print(result)  # Should print 5 + 3 = 8
-# # The above code is a simple stack-based virtual machine implementation in Python.
+code = Code(
+    bytecode=bytearray([
+        Opcode.JUMP, 0x0C, 0x00,
+        Opcode.LOAD, 0x02, 0x00,0x00,0x00,
+        Opcode.LOAD, 0x03, 0x00,0x00,0x00,
+        Opcode.ADD,
+        Opcode.RETURN,
+        Opcode.PUSH_INT, 0x02,0x00,0x00,0x00, # argument 1's id = 2
+        Opcode.PUSH_INT, 0x08,0x00,0x00,0x00, # argument 1's value = 8
+        Opcode.PUSH_INT, 0x03,0x00,0x00,0x00, # argument 2's id = 3
+        Opcode.PUSH_INT, 0x05,0x00,0x00,0x00, # argument 2's value = 5
+        Opcode.PUSH_INT, 0x02,0x00,0x00,0x00, # Number of arguments = 2
+        Opcode.PUSH_INT, 0x03,0x00,0x00,0x00, # Function's entry = 3
+        Opcode.CALL,
+        Opcode.HALT
+        ]),
+    env=Environment()
+)
+
+stack = StackVM(code)
+result = stack.execute()
+print(result)  # Should print 5 + 3 = 8
+
 
 
 
 
 # Example 2 (factorial of 5)
 
+# fnobj =  FunObj(
+#     entry=3,
+#     args=[2],
+# )
 
-
-
-fnobj =  FunObj(
-    entry=3,
-    args=[2],
-)
-
-env = Environment()
-env.add(1, fnobj)
+# env = Environment()
+# env.add(1, fnobj)
 
 code = Code(
     bytecode=bytearray([
-        Opcode.JUMP, 0x30, 0x00, # This is a jump of 16*3 = 48 bytes
-        Opcode.LOAD, 0x02, 0x00,0x00,0x00,
+        Opcode.JUMP, 0x36, 0x00, # This is a jump of 16*3 = 48 bytes
+        Opcode.LOAD, 0x02, 0x00, 0x00, 0x00,
         Opcode.PUSH_INT, 0x01, 0x00, 0x00, 0x00,
         Opcode.EQ,
         Opcode.JUMP_IF_ZERO, 0x06, 0x00,
         Opcode.LOAD, 0x02, 0x00,0x00,0x00,
         Opcode.RETURN,
         Opcode.LOAD, 0x02, 0x00,0x00,0x00,
+        Opcode.PUSH_INT, 0x02, 0x00, 0x00, 0x00, # id = 2
         Opcode.LOAD, 0x02, 0x00,0x00,0x00,
         Opcode.PUSH_INT, 0x01, 0x00, 0x00, 0x00,
         Opcode.SUB,
-        Opcode.PUSH_INT, 0x01, 0x00, 0x00, 0x00,
-        Opcode.CALL, 0x01, 0x00, 0x00, 0x00,
+        Opcode.PUSH_INT, 0x01, 0x00, 0x00, 0x00, # Number of args
+        Opcode.PUSH_INT, 0x03, 0x00, 0x00, 0x00, # Function's entry
+        Opcode.CALL,
         Opcode.MUL,
         Opcode.RETURN,
-        Opcode.PUSH_INT, 0x05, 0x00, 0x00, 0x00,
-        Opcode.PUSH_INT, 0x01, 0x00, 0x00, 0x00,
-        Opcode.CALL , 0x01, 0x00, 0x00, 0x00,
+        Opcode.PUSH_INT, 0x02, 0x00, 0x00, 0x00, # id = 2
+        Opcode.PUSH_INT, 0x05, 0x00, 0x00, 0x00, # val = 5
+        Opcode.PUSH_INT, 0x01, 0x00, 0x00, 0x00, # Number of args
+        Opcode.PUSH_INT, 0x03, 0x00, 0x00, 0x00, # Function's entry
+        Opcode.CALL,
         Opcode.HALT
         ]),
-    env=env
+    env=Environment()
 )
 
 stack = StackVM(code)
