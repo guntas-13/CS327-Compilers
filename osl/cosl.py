@@ -124,6 +124,7 @@ class FunObj:
     params: List[AST]
     body: AST
     env: Environment
+    entry: Optional[int] = None 
     
 @dataclass
 class Statements(AST):

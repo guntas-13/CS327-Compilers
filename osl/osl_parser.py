@@ -314,3 +314,13 @@ def resolve(program: AST, env: Environment = None) -> AST:
         
         case ReturnStmt(expr):
             return ReturnStmt(resolve_(expr))
+from pprint import pprint 
+pprint(resolve(parse("""
+fn fact(n){
+    if(n = 0){
+        return 1;
+    }
+    return n*fact(n-1);
+}
+print(fact(1));
+""")))

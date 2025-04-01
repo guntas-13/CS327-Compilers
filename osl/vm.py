@@ -64,6 +64,7 @@ class Code:
 
 class Opcode:
     PUSH_INT    = 0x03
+    PUSH_NONE   = 0x07
     POP         = 0x10
     DUP         = 0x11
     ADD         = 0x20
@@ -74,6 +75,7 @@ class Opcode:
     NEG         = 0x25
     EQ          = 0x40
     LT          = 0x42
+    GT          = 0x43
     JUMP        = 0x50
     JUMP_IF_ZERO = 0x51
     JUMP_IF_NONZERO = 0x52
@@ -84,6 +86,7 @@ class Opcode:
     LOAD        = 0x81
     ENTER_SCOPE = 0x82
     EXIT_SCOPE  = 0x83
+    LOG         = 0x90
     
 class StackVM:
     def __init__(self, code: Code):
@@ -116,8 +119,10 @@ class StackVM:
     
     def execute(self):
         while self.pc < len(self.code.bytecode):
-            print(f"PC: {self.pc}")
+            #print(self.stack)
+            #print(f"PC: {self.pc}")
             op = self.code.bytecode[self.pc]
+            #print(f"Opcode: {hex(op)}")
             if op == Opcode.HALT:
                 break
             
@@ -213,6 +218,16 @@ class StackVM:
                     raise TypeError("Invalid types for LT")
 
                 self.pc += 1
+
+            elif op == Opcode.GT:
+                b = self.pop()
+                a = self.pop()
+                if isinstance(a, Integer) and isinstance(b, Integer):
+                    self.push(Integer(int(a.val > b.val)))
+                else:
+                    raise TypeError("Invalid types for GT")
+
+                self.pc += 1
             
             elif op == Opcode.JUMP:
                 if self.pc + 2 > len(self.code.bytecode):
@@ -248,9 +263,9 @@ class StackVM:
                 id = struct.unpack('<i', self.code.bytecode[self.pc + 1:self.pc + 5])[0]
                 val = self.pop()
                 try:
-                    self.current_env().update(id, val)
+                    self.current_env.update(id, val)
                 except ValueError:
-                    self.current_env().add(id, val)
+                    self.current_env.add(id, val)
                 self.pc += 5
                 
             elif op == Opcode.LOAD:
@@ -263,11 +278,11 @@ class StackVM:
                 self.pc += 5
                 
             elif op == Opcode.ENTER_SCOPE:
-                self.current_env().enter_scope()
+                self.current_env.enter_scope()
                 self.pc += 1
                 
             elif op == Opcode.EXIT_SCOPE:
-                self.current_env().exit_scope()
+                self.current_env.exit_scope()
                 self.pc += 1
             
             elif op == Opcode.CALL:
@@ -284,7 +299,7 @@ class StackVM:
                     raise RuntimeError("Invalid CALL instruction")
                 
                 addr = self.pop().val
-                # call_env = self.current_env().copy()
+                # call_env = self.current_env.copy()
                 # call_env.enter_scope()
                 num_args = self.pop().val
 
@@ -310,6 +325,17 @@ class StackVM:
                 if return_value is not None:
                     self.push(return_value)
                 self.pc = frame.ret if frame.ret is not None else len(self.code.bytecode)
+
+            elif op == Opcode.LOG:
+                if not self.stack:
+                    raise RuntimeError("No elements to print (empty stack)")
+                val = self.pop()
+                print(val.val)
+                self.pc += 1
+
+            elif op == Opcode.PUSH_NONE:
+                self.push(None)
+                self.pc += 1
                 
             else:
                 raise RuntimeError(f"Unknown opcode: {hex(op)} at PC {self.pc}")    
@@ -328,28 +354,28 @@ class StackVM:
 
 # From here
 
-code = Code(
-    bytecode=bytearray([
-        Opcode.JUMP, 0x0C, 0x00,
-        Opcode.LOAD, 0x02, 0x00,0x00,0x00,
-        Opcode.LOAD, 0x03, 0x00,0x00,0x00,
-        Opcode.ADD,
-        Opcode.RETURN,
-        Opcode.PUSH_INT, 0x02,0x00,0x00,0x00, # argument 1's id = 2
-        Opcode.PUSH_INT, 0x08,0x00,0x00,0x00, # argument 1's value = 8
-        Opcode.PUSH_INT, 0x03,0x00,0x00,0x00, # argument 2's id = 3
-        Opcode.PUSH_INT, 0x05,0x00,0x00,0x00, # argument 2's value = 5
-        Opcode.PUSH_INT, 0x02,0x00,0x00,0x00, # Number of arguments = 2
-        Opcode.PUSH_INT, 0x03,0x00,0x00,0x00, # Function's entry = 3
-        Opcode.CALL,
-        Opcode.HALT
-        ]),
-    env=Environment()
-)
+# code = Code(
+#     bytecode=bytearray([
+#         Opcode.JUMP, 0x0C, 0x00,
+#         Opcode.LOAD, 0x02, 0x00,0x00,0x00,
+#         Opcode.LOAD, 0x03, 0x00,0x00,0x00,
+#         Opcode.ADD,
+#         Opcode.RETURN,
+#         Opcode.PUSH_INT, 0x02,0x00,0x00,0x00, # argument 1's id = 2
+#         Opcode.PUSH_INT, 0x08,0x00,0x00,0x00, # argument 1's value = 8
+#         Opcode.PUSH_INT, 0x03,0x00,0x00,0x00, # argument 2's id = 3
+#         Opcode.PUSH_INT, 0x05,0x00,0x00,0x00, # argument 2's value = 5
+#         Opcode.PUSH_INT, 0x02,0x00,0x00,0x00, # Number of arguments = 2
+#         Opcode.PUSH_INT, 0x03,0x00,0x00,0x00, # Function's entry = 3
+#         Opcode.CALL,
+#         Opcode.HALT
+#         ]),
+#     env=Environment()
+# )
 
-stack = StackVM(code)
-result = stack.execute()
-print(result)  # Should print 5 + 3 = 8
+# stack = StackVM(code)
+# result = stack.execute()
+# print(result)  # Should print 5 + 3 = 8
 
 
 
@@ -365,38 +391,50 @@ print(result)  # Should print 5 + 3 = 8
 # env = Environment()
 # env.add(1, fnobj)
 
+# code = Code(
+#     bytecode=bytearray([
+#         Opcode.JUMP, 0x36, 0x00, # This is a jump of 16*3 = 48 bytes
+#         Opcode.LOAD, 0x02, 0x00, 0x00, 0x00,
+#         Opcode.PUSH_INT, 0x01, 0x00, 0x00, 0x00,
+#         Opcode.EQ,
+#         Opcode.JUMP_IF_ZERO, 0x06, 0x00,
+#         Opcode.LOAD, 0x02, 0x00,0x00,0x00,
+#         Opcode.RETURN,
+#         Opcode.LOAD, 0x02, 0x00,0x00,0x00,
+#         Opcode.PUSH_INT, 0x02, 0x00, 0x00, 0x00, # id = 2
+#         Opcode.LOAD, 0x02, 0x00,0x00,0x00,
+#         Opcode.PUSH_INT, 0x01, 0x00, 0x00, 0x00,
+#         Opcode.SUB,
+#         Opcode.PUSH_INT, 0x01, 0x00, 0x00, 0x00, # Number of args
+#         Opcode.PUSH_INT, 0x03, 0x00, 0x00, 0x00, # Function's entry
+#         Opcode.CALL,
+#         Opcode.MUL,
+#         Opcode.RETURN,
+#         Opcode.PUSH_INT, 0x02, 0x00, 0x00, 0x00, # id = 2
+#         Opcode.PUSH_INT, 0x05, 0x00, 0x00, 0x00, # val = 5
+#         Opcode.PUSH_INT, 0x01, 0x00, 0x00, 0x00, # Number of args
+#         Opcode.PUSH_INT, 0x03, 0x00, 0x00, 0x00, # Function's entry
+#         Opcode.CALL,
+#         Opcode.HALT
+#         ]),
+#     env=Environment()
+# )
+
+# stack = StackVM(code)
+# result = stack.execute()
+# print(result)  # Should print 5 + 3 = 8
+
+with open("bytecode.bin", "rb") as f:
+    inp = bytearray(f.read())
+
 code = Code(
-    bytecode=bytearray([
-        Opcode.JUMP, 0x36, 0x00, # This is a jump of 16*3 = 48 bytes
-        Opcode.LOAD, 0x02, 0x00, 0x00, 0x00,
-        Opcode.PUSH_INT, 0x01, 0x00, 0x00, 0x00,
-        Opcode.EQ,
-        Opcode.JUMP_IF_ZERO, 0x06, 0x00,
-        Opcode.LOAD, 0x02, 0x00,0x00,0x00,
-        Opcode.RETURN,
-        Opcode.LOAD, 0x02, 0x00,0x00,0x00,
-        Opcode.PUSH_INT, 0x02, 0x00, 0x00, 0x00, # id = 2
-        Opcode.LOAD, 0x02, 0x00,0x00,0x00,
-        Opcode.PUSH_INT, 0x01, 0x00, 0x00, 0x00,
-        Opcode.SUB,
-        Opcode.PUSH_INT, 0x01, 0x00, 0x00, 0x00, # Number of args
-        Opcode.PUSH_INT, 0x03, 0x00, 0x00, 0x00, # Function's entry
-        Opcode.CALL,
-        Opcode.MUL,
-        Opcode.RETURN,
-        Opcode.PUSH_INT, 0x02, 0x00, 0x00, 0x00, # id = 2
-        Opcode.PUSH_INT, 0x05, 0x00, 0x00, 0x00, # val = 5
-        Opcode.PUSH_INT, 0x01, 0x00, 0x00, 0x00, # Number of args
-        Opcode.PUSH_INT, 0x03, 0x00, 0x00, 0x00, # Function's entry
-        Opcode.CALL,
-        Opcode.HALT
-        ]),
+    bytecode=inp,
     env=Environment()
 )
 
 stack = StackVM(code)
 result = stack.execute()
-print(result)  # Should print 5 + 3 = 8
+# print(result)  # Should print 5 + 3 = 8
 
 
 
