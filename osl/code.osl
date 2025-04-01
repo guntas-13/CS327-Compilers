@@ -7,3 +7,23 @@ fn fact(n, f){
 }
 
 print(fact(2, 1));
+
+fn f(a){
+    return a+2;
+}
+f(2);
+
+// To do: (Fix the error in the following code)
+
+// fn f1()
+// {
+//     var x := 10;
+//     fn f2()
+//     {
+//         return x;
+//     }
+//     return f2;
+// }
+// var msg := f1();
+// print(msg());
+// f1();

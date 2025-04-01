@@ -61,11 +61,10 @@ fun_code = bytearray()
 def do_codegen(tree: AST, env: Environment = None):
     if env is None:
         env = Environment()
-    print(env.envs)
         
     def e_(tree: AST):
         return do_codegen(tree, env)
-    
+
     code = bytearray()
     match tree:
         case Program(decls):
@@ -102,15 +101,14 @@ def do_codegen(tree: AST, env: Environment = None):
             return code
         
         case LetFun(Variable(varName, i), params, body):
-            funObj = FunObj(params, body, None)
-            fbody = do_codegen(body, env)
+            funObj = FunObj(params, body, env.copy())
             global fun_code
+            funObj.entry = len(fun_code)+3
+            env.add(f"{varName}:{i}", funObj)
+            fbody = do_codegen(body, env)
             fun_code.append(JUMP)
             fun_code.extend(int(len(fbody)).to_bytes(2, 'little'))
-            funObj.entry = len(fun_code)
             fun_code.extend(fbody)
-            env.add(f"{varName}:{i}", funObj)
-            funObj.env = env.copy()
             return code
         
         case CallFun(Variable(varName, i), args):
@@ -240,6 +238,9 @@ def do_codegen(tree: AST, env: Environment = None):
             code.extend(e_(then_body))
             code[jif_pos:jif_pos+2] = int(len(code)-jif_pos-2).to_bytes(2, 'little')
             return code
+        
+        # case _:
+        #     print("hereeeeeeeeeeeeeeeeeeeeeeeee")
 
 def codegen(t):
     global fun_code
