@@ -238,9 +238,6 @@ def do_codegen(tree: AST, env: Environment = None):
             code.extend(e_(then_body))
             code[jif_pos:jif_pos+2] = int(len(code)-jif_pos-2).to_bytes(2, 'little')
             return code
-        
-        # case _:
-        #     print("hereeeeeeeeeeeeeeeeeeeeeeeee")
 
 def codegen(t):
     global fun_code
