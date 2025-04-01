@@ -24,7 +24,7 @@ class Environment:
         self.envs.pop()
     
     def add(self, var: int, val: Value):
-        assert var not in self.envs[-1], f"Variable {var} already defined"
+        # assert var not in self.envs[-1], f"Variable {var} already defined"
         self.envs[-1][var] = val
     
     def get(self, var: int) -> Value:
@@ -54,7 +54,7 @@ class FunObj:
 
 @dataclass
 class CallFrame:
-    env: Environment
+    # env: Environment
     ret: int
     
 @dataclass
@@ -93,9 +93,10 @@ class StackVM:
         self.call_stack: List[CallFrame] = []
         self.STACK_SIZE = 4096
         c = CallFrame(
-            env=code.env.copy(),
+            # env=code.env.copy(),
             ret=None)
         self.call_stack.append(c)
+        self.current_env = code.env
 
     def push(self, value: Value):
         if len(self.stack) >= self.STACK_SIZE:
@@ -257,7 +258,7 @@ class StackVM:
                     raise RuntimeError("Invalid LOAD instruction")
                 
                 id = struct.unpack('<i', self.code.bytecode[self.pc + 1:self.pc + 5])[0]
-                val = self.current_env().get(id)
+                val = self.current_env.get(id)
                 self.push(val)
                 self.pc += 5
                 
@@ -283,19 +284,19 @@ class StackVM:
                     raise RuntimeError("Invalid CALL instruction")
                 
                 addr = self.pop().val
-                call_env = self.current_env().copy()
-                call_env.enter_scope()
+                # call_env = self.current_env().copy()
+                # call_env.enter_scope()
                 num_args = self.pop().val
 
                 for _ in range(num_args):
                     val = self.pop()
                     id = self.pop().val
-                    call_env.add(id, val)
+                    self.current_env.add(id, val)
                     
                 self.pc += 1
                 
                 c = CallFrame(
-                    env = call_env,
+                    # env = call_env,
                     ret = self.pc
                 )
                 self.call_stack.append(c)
