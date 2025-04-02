@@ -55,17 +55,22 @@ STORE = 0x80
 LOAD  = 0x81
 
 LOG = 0x90
+NEWF = 0x91
+MAKEF = 0x92
 
-fun_code = bytearray()
+full_code = bytearray()
 
-def do_codegen(tree: AST, env: Environment = None):
+
+def do_codegen(tree: AST, env: Environment = None, code: bytearray = None): # returns bytearray
     if env is None:
         env = Environment()
         
     def e_(tree: AST):
         return do_codegen(tree, env)
+    
+    if code is None:
+        code = bytearray()
 
-    code = bytearray()
     match tree:
         case Program(decls):
             for decl in decls:
@@ -101,14 +106,39 @@ def do_codegen(tree: AST, env: Environment = None):
             return code
         
         case LetFun(Variable(varName, i), params, body):
-            funObj = FunObj(params, body, env.copy())
-            global fun_code
-            funObj.entry = len(fun_code)+3
+            funObj = FunObj(params, body, None)
+            code.append(PUSH_INT)
+            code.extend(int(i).to_bytes(4, 'little'))
+            code.append(MAKEF)
             env.add(f"{varName}:{i}", funObj)
+            funObj.env = env.copy()
+
+            # new bytearray
+            new_code = bytearray()
+            # add arguments to stack
+            for param in params:
+                new_code.append(PUSH_INT)
+                new_code.extend(int(param.id).to_bytes(4, 'little'))
+            # add number of arguments
+            new_code.append(PUSH_INT)
+            new_code.extend(int(len(params)).to_bytes(4, 'little'))
+            # add function id
+            new_code.append(PUSH_INT)
+            new_code.extend(int(i).to_bytes(4, 'little'))
+            new_code.append(NEWF)
+
             fbody = do_codegen(body, env)
-            fun_code.append(JUMP)
-            fun_code.extend(int(len(fbody)).to_bytes(2, 'little'))
-            fun_code.extend(fbody)
+
+            # how much to jump
+            # new_code.append(PUSH_INT)
+            new_code.append(JUMP)
+            new_code.extend(len(fbody).to_bytes(2, 'little'))
+            global full_code
+            funObj.entry = len(full_code) + len(new_code)
+            new_code.extend(fbody)
+            # global arr
+            # arr.append(new_code)
+            full_code.extend(new_code)
             return code
         
         case CallFun(Variable(varName, i), args):
@@ -124,7 +154,7 @@ def do_codegen(tree: AST, env: Environment = None):
             code.append(PUSH_INT)
             code.extend(int(len(args)).to_bytes(4, 'little'))
             code.append(PUSH_INT)
-            code.extend(int(fun.entry).to_bytes(4, 'little'))
+            code.extend(int(i).to_bytes(4, 'little'))
             code.append(CALL)
             return code
         
@@ -240,8 +270,12 @@ def do_codegen(tree: AST, env: Environment = None):
             return code
 
 def codegen(t):
-    global fun_code
+    # global fun_code
+    global full_code
     code = do_codegen(t)
-    fun_code.extend(code)
-    fun_code.append(HALT)
-    return fun_code
+    # fun_code.extend(code)
+    # fun_code.append(HALT)
+    # return func_code
+    full_code.extend(code)
+    full_code.append(HALT)
+    return full_code

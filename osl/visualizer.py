@@ -13,7 +13,7 @@ def parse_bytecode(bytecode: bytearray):
         0x60: ("I2F", 0), 0x61: ("F2I", 0), 0x62: ("I2D", 0), 0x63: ("D2I", 0), 0x64: ("F2D", 0), 0x65: ("D2F", 0),
         0x70: ("NEW_OBJECT", 1), 0x71: ("GET_FIELD", 1), 0x72: ("SET_FIELD", 1),
         0x80: ("STORE", 4), 0x81: ("LOAD", 4),
-        0x90: ("LOG", 0)
+        0x90: ("LOG", 0), 0x91: ("NEWF", 0), 0x92: ("MAKEF", 0),
     }
     
     index = 0
