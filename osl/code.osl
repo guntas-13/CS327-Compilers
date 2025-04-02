@@ -1,11 +1,11 @@
-fn fact(n){
-    if(n = 0){
-        return 1;
-    }
-    return n*fact(n-1);
-}
+// fn fact(n){
+//     if(n = 0){
+//         return 1;
+//     }
+//     return n*fact(n-1);
+// }
 
-print(fact(10));
+// print(fact(10));
 
 // fn f(a){
 //     return a+2;
@@ -40,3 +40,28 @@ print(fact(10));
 // var msg := f1();
 // print(msg());
 // f1();
+
+var x := 5;
+
+fn foo()
+{
+    x := 10;
+    fn bar()
+    {
+        x := 15;
+        fn foobar()
+        {
+            x := 20;
+            return x;
+        }
+        log x;
+        return foobar;
+    }
+    log x;
+    return bar;
+}
+
+var f := foo();
+var g := f();
+log g();
+x;

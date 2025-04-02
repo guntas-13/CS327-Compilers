@@ -76,11 +76,11 @@ def parse(s: str) -> AST:
         match peek():
             case KeyWordToken("if"):
                 return parse_if()
-            case KeyWordToken("print"):
-                consume(KeyWordToken, "print")
-                consume(OperatorToken, "(")
+            case KeyWordToken("log"):
+                consume(KeyWordToken, "log")
+                # consume(OperatorToken, "(")
                 expr = parse_expression()
-                consume(OperatorToken, ")")
+                # consume(OperatorToken, ")")
                 consume(OperatorToken, ";")
                 return PrintStmt(expr)
             case KeyWordToken("return"):
