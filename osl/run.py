@@ -15,15 +15,15 @@ with open("code.osl") as f:
 #     print(f"{i}: {t}")
 # print()
 rcode = resolve(parse(code))
-# pprint(rcode)
+pprint(rcode)
 # print()
-print(e(rcode))
+# print(e(rcode))
 # print(codegen(rcode))
-# bb = bytearray(codegen(rcode))
-# print(bb)
-# with open("bytecode.bin", "wb") as bytecode_file:
-#     bytecode_file.write(bb)
+bb = bytearray(codegen(rcode))
+print(bb)
+with open("bytecode.bin", "wb") as bytecode_file:
+    bytecode_file.write(bb)
 
-# result = parse_bytecode(bb)
-# for opcode, operand in result:
-#    print(f"{opcode} {operand if operand is not None else ''}")
+result = parse_bytecode(bb)
+for opcode, operand in result:
+   print(f"{opcode} {operand if operand is not None else ''}")
