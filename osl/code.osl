@@ -17,13 +17,19 @@
 
 // Fix this: (following code has scope error)
 
-// var x := 10;
-// fn f(a){
-//     x := a;
-//     return x;
-// }
-// print(f(5));
-// print(x);
+var x := 10;
+fn f(a){
+    x := a;
+    var y := x;
+    fn g(y){
+        y := x;
+        return x;
+    }
+    print(g(2));
+    return x;
+}
+print(f(5));
+print(x);
 
 
 // To do: (Fix the error in the following code)
@@ -40,28 +46,3 @@
 // var msg := f1();
 // print(msg());
 // f1();
-
-var x := 5;
-
-fn foo()
-{
-    x := 10;
-    fn bar()
-    {
-        x := 15;
-        fn foobar()
-        {
-            x := 20;
-            return x;
-        }
-        log x;
-        return foobar;
-    }
-    log x;
-    return bar;
-}
-
-var f := foo();
-var g := f();
-log g();
-x;
