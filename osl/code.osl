@@ -1,17 +1,30 @@
-fn fact(n, f){
+fn fact(n){
     if(n = 0){
-        return f;
-    }else{
-        return fact(n-1, n*f);
+        return 1;
     }
+    return n*fact(n-1);
 }
 
-print(fact(2, 1));
+print(fact(10));
 
-fn f(a){
-    return a+2;
-}
-f(2);
+// fn f(a){
+//     return a+2;
+// }
+// f(2);
+
+
+
+
+// Fix this: (following code has scope error)
+
+// var x := 10;
+// fn f(a){
+//     x := a;
+//     return x;
+// }
+// print(f(5));
+// print(x);
+
 
 // To do: (Fix the error in the following code)
 

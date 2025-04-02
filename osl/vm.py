@@ -94,7 +94,7 @@ class StackVM:
         self.stack: List[Value] = []
         self.pc = 0
         self.call_stack: List[CallFrame] = []
-        self.STACK_SIZE = 4096
+        self.STACK_SIZE = 10000
         c = CallFrame(
             # env=code.env.copy(),
             ret=None)
