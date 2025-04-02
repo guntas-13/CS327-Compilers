@@ -25,11 +25,11 @@ fn f(a){
         y := x;
         return x;
     }
-    print(g(2));
+    log g(2);
     return x;
 }
-print(f(5));
-print(x);
+log f(5);
+log x;
 
 
 // To do: (Fix the error in the following code)
