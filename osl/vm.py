@@ -47,20 +47,20 @@ class Environment:
         return new_env
 
 @dataclass
-class FunObj:
+class FunObj(Value):
     entry: int
     args: Optional[List[int]]
-    # env: Environment
+    env: Environment
 
 @dataclass
 class CallFrame:
-    # env: Environment
+    env: Environment
     ret: int
     
 @dataclass
 class Code:
     bytecode: bytearray
-    env: Environment   
+    # env: Environment   
 
 class Opcode:
     PUSH_INT    = 0x03
@@ -77,7 +77,7 @@ class Opcode:
     LT          = 0x42
     GT          = 0x43
     JUMP        = 0x50
-    JUMP_IF_ZERO = 0x51
+    JUMP_IF_ZERO    = 0x51
     JUMP_IF_NONZERO = 0x52
     CALL        = 0x53
     RETURN      = 0x54
@@ -87,6 +87,8 @@ class Opcode:
     ENTER_SCOPE = 0x82
     EXIT_SCOPE  = 0x83
     LOG         = 0x90
+    NEWF        = 0x91
+    MAKEF       = 0x92
     
 class StackVM:
     def __init__(self, code: Code):
@@ -96,10 +98,9 @@ class StackVM:
         self.call_stack: List[CallFrame] = []
         self.STACK_SIZE = 10000
         c = CallFrame(
-            # env=code.env.copy(),
+            env=Environment(),
             ret=None)
         self.call_stack.append(c)
-        self.current_env = code.env
 
     def push(self, value: Value):
         if len(self.stack) >= self.STACK_SIZE:
@@ -119,8 +120,6 @@ class StackVM:
     
     def execute(self):
         while self.pc < len(self.code.bytecode):
-            #print(self.stack)
-            #print(f"PC: {self.pc}")
             op = self.code.bytecode[self.pc]
             #print(f"Opcode: {hex(op)}")
             if op == Opcode.HALT:
@@ -234,7 +233,6 @@ class StackVM:
                     raise RuntimeError("Invalid JUMP instruction")
                 offset = struct.unpack('<h', self.code.bytecode[self.pc + 1:self.pc + 3])[0]
                 self.pc += 3 + offset
-                # print(self.pc)
             
             elif op == Opcode.JUMP_IF_ZERO:
                 if self.pc + 2 > len(self.code.bytecode):
@@ -263,9 +261,9 @@ class StackVM:
                 id = struct.unpack('<i', self.code.bytecode[self.pc + 1:self.pc + 5])[0]
                 val = self.pop()
                 try:
-                    self.current_env.update(id, val)
+                    self.current_env().update(id, val)
                 except ValueError:
-                    self.current_env.add(id, val)
+                    self.current_env().add(id, val)
                 self.pc += 5
                 
             elif op == Opcode.LOAD:
@@ -273,17 +271,10 @@ class StackVM:
                     raise RuntimeError("Invalid LOAD instruction")
                 
                 id = struct.unpack('<i', self.code.bytecode[self.pc + 1:self.pc + 5])[0]
-                val = self.current_env.get(id)
+                val = self.current_env().get(id)
                 self.push(val)
                 self.pc += 5
-                
-            elif op == Opcode.ENTER_SCOPE:
-                self.current_env.enter_scope()
-                self.pc += 1
-                
-            elif op == Opcode.EXIT_SCOPE:
-                self.current_env.exit_scope()
-                self.pc += 1
+
             
             elif op == Opcode.CALL:
                 """
@@ -291,31 +282,30 @@ class StackVM:
                 Function address
                 Number of arguments
                 Argument 1's val
-                Argument 1's id
                 ...
                 (All are 4 bytes)
                 """
                 if self.pc + 1 > len(self.code.bytecode):
                     raise RuntimeError("Invalid CALL instruction")
                 
-                addr = self.pop().val
-                # call_env = self.current_env.copy()
-                # call_env.enter_scope()
+                fun_id = self.pop().val
+                funObject = self.current_env().get(fun_id)
+                call_env = funObject.env.copy()
+                call_env.enter_scope()
                 num_args = self.pop().val
 
-                for _ in range(num_args):
+                for it in range(num_args):
                     val = self.pop()
-                    id = self.pop().val
-                    self.current_env.add(id, val)
-                    
+                    call_env.add(funObject.args[it], val)
+
                 self.pc += 1
                 
                 c = CallFrame(
-                    # env = call_env,
+                    env = call_env,
                     ret = self.pc
                 )
                 self.call_stack.append(c)
-                self.pc = addr
+                self.pc = funObject.entry
                 
             elif op == Opcode.RETURN:
                 if not self.call_stack:
@@ -335,6 +325,25 @@ class StackVM:
 
             elif op == Opcode.PUSH_NONE:
                 self.push(None)
+                self.pc += 1
+
+            elif op == Opcode.NEWF:
+                fun_id = self.pop().val
+                num_args = self.pop().val
+                args_ids = []
+                for _ in range(num_args):
+                    args_ids.append(self.pop().val)
+
+                newFunObj = FunObj(self.pc+4, args_ids, None)
+                self.current_env().add(fun_id, newFunObj)
+                self.pc += 1
+
+            elif op == Opcode.MAKEF:
+                fun_id = self.pop().val
+                funObject = self.current_env().get(fun_id)
+                
+                self.current_env().add(fun_id, funObject)
+                funObject.env = self.current_env().copy()
                 self.pc += 1
                 
             else:
@@ -429,7 +438,7 @@ with open("bytecode.bin", "rb") as f:
 
 code = Code(
     bytecode=inp,
-    env=Environment()
+    # env=Environment()
 )
 
 stack = StackVM(code)
