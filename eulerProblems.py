@@ -1,4 +1,4 @@
-from calculator_extended_resolved import e, resolve, parse
+from osl_package import e, resolve, parse
 import time
 import sys
 from colorama import Fore, Style
