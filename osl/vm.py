@@ -433,6 +433,8 @@ class StackVM:
 # result = stack.execute()
 # print(result)  # Should print 5 + 3 = 8
 
+# Uncomment from here
+
 with open("bytecode.bin", "rb") as f:
     inp = bytearray(f.read())
 
@@ -443,7 +445,3 @@ code = Code(
 
 stack = StackVM(code)
 result = stack.execute()
-# print(result)  # Should print 5 + 3 = 8
-
-
-
