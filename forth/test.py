@@ -175,4 +175,6 @@ if
 # for i, t in enumerate(lexons):
 #     print(f"{i}: {t}")
 
-eval(parse(prog))
+parsed = parse(prog)
+# print(parsed)
+eval(parsed)

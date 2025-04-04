@@ -62,10 +62,10 @@ class ProgramObject(Object):
         return len(self.prog)
     
     def __getitem__(self, key):
-        return self.prog[key]
+        return self.val[key]
     
     def __repr__(self):
-        return f"ProgramObject({self.prog})"
+        return f"ProgramObject({self.val})"
 
 def parse(s: str) -> List[Object]:
     tokens = lex(s)
