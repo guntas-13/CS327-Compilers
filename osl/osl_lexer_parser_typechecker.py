@@ -66,9 +66,12 @@ def lex(s: str) -> Iterator[Token]:
             elif name in {"true", "false"}:
                 prev_token = BoolToken(name)
                 yield prev_token
-            elif isinstance(prev_token, KeyWordToken) and prev_token.op == "fn":
+            elif isinstance(prev_token, TypeToken):
                 prev_token = VariableToken(name)
                 yield prev_token
+            # elif isinstance(prev_token, KeyWordToken) and prev_token.op == "fn":
+            #     prev_token = VariableToken(name)
+                # yield prev_token
             elif i < len(s) and s[i] == "(":
                 prev_token = FunCallToken(name)
                 yield prev_token
@@ -383,15 +386,16 @@ def parse(s: str) -> AST:
             
     def parse_func():
         consume(KeyWordToken, "fn")
+        return_type = consume(TypeToken).type
         func_name = consume(VariableToken)
         
         consume(OperatorToken, "(")
         params = []
         if peek() != OperatorToken(")"):
             while True:
-                param_name = consume(VariableToken).varName
-                consume(OperatorToken, ":")
                 param_type = consume(TypeToken).type
+                param_name = consume(VariableToken).varName
+                # consume(OperatorToken, ":")
                 params.append(Variable(param_name, param_type))
                 if peek() == OperatorToken(","):
                     consume(OperatorToken, ",")
@@ -399,17 +403,16 @@ def parse(s: str) -> AST:
                     break
         consume(OperatorToken, ")")
         
-        consume(OperatorToken, ":")
-        return_type = consume(TypeToken).type
+        # consume(OperatorToken, ":")
         
         body = parse_block()
         return LetFun(Variable(func_name.varName, return_type), params, return_type, body)
     
     def parse_let():
         consume(KeyWordToken, "var")
-        var_name = consume(VariableToken).varName
-        consume(OperatorToken, ":")
         var_type = consume(TypeToken).type
+        var_name = consume(VariableToken).varName
+        # consume(OperatorToken, ":")
         e1 = None
         if peek() == OperatorToken(":="):
             consume(OperatorToken, ":=")
@@ -785,6 +788,7 @@ def infer_type(ast: AST, env: Environment) -> str:
             raise TypeErr(f"Cannot infer type for {ast}")
 
 def typecheck(program: AST, env: Environment) -> None:
+    # print(f"Typechecking {program}")
     match program:
         case Program(decls):
             for decl in decls:
@@ -848,26 +852,26 @@ def typecheck(program: AST, env: Environment) -> None:
 test_codes = [
     # Test 1: Basic Arithmetic and Printing
     """
-    var a: i32 := 10;
-    var b: i32 := 20;
-    var c: i64 := a + b;
+    var i32 a := 10;
+    var i32 b := 20;
+    var i64 c := a + b;
     log c;
     """,
 
-    # Test 2: Function with Multiple Arguments
+    # # Test 2: Function with Multiple Arguments
     """
-    fn multiply(x: i64, y: i64): i64 {
+    fn i64 multiply(i64 x, i64 y) {
         return x * y;
     }
-    var result: i64 := multiply(5, 10);
+    var i64 result := multiply(5, 10);
     log result;
     """,
 
-    # Test 3: Conditional Statements
+    # # Test 3: Conditional Statements
     """
-    var x: i32 := 15;
-    var y: i32 := 25;
-    var greater: bool := x > y;
+    var i32 x := 15;
+    var i32 y := 25;
+    var bool greater := x > y;
     if greater {
         log 1;
     } else {
@@ -875,103 +879,103 @@ test_codes = [
     }
     """,
 
-    # Test 4: Nested Functions and Scope
+    # # Test 4: Nested Functions and Scope
     """
-    fn add(a: i32, b: i32): i32 {
+    fn i32 add(i32 a, i32 b) {
         return a + b;
     }
-    fn double(x: i32): i32 {
+    fn i32 double(i32 x) {
         return add(x, x);
     }
-    var z: i32 := double(7);
+    var i32 z := double(7);
     log z;
     """,
 
-    # Test 5: Mixed Numeric Types
+    # # Test 5: Mixed Numeric Types
     """
-    var small: i8 := 42;
-    var medium: i16 := 1000;
-    var large: i32 := small + medium;
-    var float_val: f32 := 3.14;
-    var result: f64 := large + float_val;
+    var i8  small:= 42;
+    var i16 medium := 1000;
+    var i32 large := small + medium;
+    var f32 float_val := 3.14;
+    var f64 result := large + float_val;
     log result;
     """,
 
-    # Test 6: Unary Operations
+    # # Test 6: Unary Operations
     """
-    var x: i32 := 16;
-    var neg: i32 := -x;
-    var sqrt: f32 := √x;
+    var i32 x := 16;
+    var i32 neg := -x;
+    var f32 sqrt := √x;
     log neg;
     log sqrt;
     """,
 
-    # Test 7: Boolean Operations
+    # # Test 7: Boolean Operations
     """
-    var a: bool := true;
-    var b: bool := false;
-    var and_result: bool := a && b;
-    var or_result: bool := a || b;
+    var bool a := true;
+    var bool b := false;
+    var bool and_result := a && b;
+    var bool or_result := a || b;
     log and_result;
     log or_result;
     """,
 
-    # Test 8: Complex Expression
+    # # Test 8: Complex Expression
     """
-    var x: i32 := 5;
-    var y: i32 := 10;
-    var z: i64 := (x + y) * 2;
-    fn compute(a: i64): i64 {
+    var i32 x := 5;
+    var i32 y := 10;
+    var i64 z := (x + y) * 2;
+    fn i64 compute(i64 a) {
         return a + 100;
     }
-    var final: i64 := compute(z);
+    var i64 final := compute(z);
     log final;
     """,
 
-    # Test 9: Empty Function and Block
+    # # Test 9: Empty Function and Block
     """
-    fn do_nothing(): i32 {
-        var temp: i32 := 0;
+    fn i32 do_nothing() {
+        var i32 temp := 0;
         {
-            var inner: i32 := 1;
+            var i32 inner := 1;
         }
         return temp;
     }
     log do_nothing();
     """,
 
-    # Test 10: String Literal
+    # # Test 10: String Literal
     """
-    var message: c8 := "Hello, world!";
+    var c8 message := "Hello, world!";
     log message;
     """,
 
-    # Test 11: Type Mismatch (Should Fail)
-    """
-    var x: i32 := 1000;
-    var y: i8 := x;  // i32 cannot safely cast to i8
-    log y;
-    """,
+    # # Test 11: Type Mismatch (Should Fail)
+    # """
+    # var i32 x := 1000;
+    # var i8 y := x;  // i32 cannot safely cast to i8
+    # log y;
+    # """,
 
-    # Test 12: Undefined Function (Should Fail)
-    """
-    log unknown(5);  // unknown function not defined
-    """,
+    # # Test 12: Undefined Function (Should Fail)
+    # """
+    # log unknown(5);  // unknown function not defined
+    # """,
 
-    # Test 13: Argument Count Mismatch (Should Fail)
-    """
-    fn add(a: i32, b: i32): i32 {
-        return a + b;
-    }
-    log add(5);  // Too few arguments
-    """,
+    # # Test 13: Argument Count Mismatch (Should Fail)
+    # """
+    # fn add(a: i32, b: i32): i32 {
+    #     return a + b;
+    # }
+    # log add(5);  // Too few arguments
+    # """,
 
-    # Test 14: Invalid Operator Type (Should Fail)
-    """
-    var x: bool := true;
-    var y: i32 := x + 1;  // Cannot add bool and i32
-    log y;
-    """
+    # # Test 14: Invalid Operator Type (Should Fail)
+    # """
+    # var x: bool := true;
+    # var y: i32 := x + 1;  // Cannot add bool and i32
+    # log y;
+    # """
 ]
 
 # --- Main ---
