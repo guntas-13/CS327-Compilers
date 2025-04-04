@@ -168,6 +168,33 @@ get dup 0 >
 if
 """
 
+prog37 = """
+get dup 0 >
+{ 
+    5 >=
+    { "Greater than equal to 5" print { 10 { "." print } repeat } run }
+    { "Less than 5" print
+      "Enter \"yes\" to proceed and print numbers from 10 to 1 else \"no\"" put
+      get dup "yes" s=
+      {
+        10 { dup 0 > } 
+        { dup print dec } 
+        while 
+      }
+      {
+        "no" s=
+        { "exited" print }
+        { "invalid string entered" print }
+        if
+      }
+      if
+    }
+    if
+}
+{ "Not positive" print }
+if
+"""
+
 # for t in lex(prog19):
 #     print(t)
 # eval(prog19)
