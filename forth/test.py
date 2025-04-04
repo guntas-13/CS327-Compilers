@@ -1,12 +1,11 @@
 from lexer import lex
-from vm import eval
+from vm import parse, eval
 import sys
 
 progFile = sys.argv[1]
 
 with open(f"./{progFile}") as file:
-    code = file.read()
-    prog = lex(code)
+    prog = file.read()
 
 prog1 = """
 "Hello, " get "!" concat concat put
@@ -157,10 +156,23 @@ prog35 = """
 "apple" "banana" lex> print
 """
 
+prog36 = """
+get dup 0 >
+{ 
+    > 5
+    { "Greater than 5" print }
+    { "Less than 5" print }
+    if
+}
+{ "Not positive" print }
+if
+"""
+
 # for t in lex(prog19):
 #     print(t)
 # eval(prog19)
-# for t in prog:
-#     print(t)
+# lexons = lex(prog)
+# for i, t in enumerate(lexons):
+#     print(f"{i}: {t}")
 
-eval(prog)
+eval(parse(prog))

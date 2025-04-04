@@ -1,1 +1,9 @@
-"apple" "banana" lex> print
+get dup 0 >
+{ 
+    5 >=
+    { "Greater than equal to 5" print }
+    { "Less than 5" print }
+    if
+}
+{ "Not positive" print }
+if

@@ -55,8 +55,8 @@ class ListObject(Object):
 class Token:
     pass
 @dataclass
-class ProgramObject(Token):
-    prog: List[Token]
+class ProgramObject(Object):
+    val: List[Object]
     
     def __len__(self):
         return len(self.prog)
@@ -67,15 +67,11 @@ class ProgramObject(Token):
     def __repr__(self):
         return f"ProgramObject({self.prog})"
 
-def eval(tokens: List, stack: Stack = None):
-    if stack is None:
-        stack = Stack()
-        
-    # tokens = lex(s)
-    i = 0
-    while i < len(tokens):
-        token = tokens[i]
-        i += 1
+def parse(s: str) -> List[Object]:
+    tokens = lex(s)
+    stack = Stack()
+    
+    for token in tokens:
         match token:
             case NumberToken(val):
                 if '.' in val:
@@ -89,6 +85,54 @@ def eval(tokens: List, stack: Stack = None):
             case StringToken(val):
                 stack.push(StringObj(val))
                             
+            case WordToken(val):
+                match val:
+                    case "}":
+                        l = []
+                        while True:
+                            if not stack:
+                                raise ValueError("Unmatched {")
+                            x = stack.pop()
+                            if isinstance(x, StringObj) and x.val == "{":
+                                break
+                            l.append(x)
+                        stack.push(ProgramObject(l[::-1]))
+                        
+                    case "{":
+                        stack.push(StringObj(val))
+                    
+                    case _:       
+                        stack.push(WordToken(val))
+                
+            case BooleanOperatorToken(op):
+                stack.push(BooleanOperatorToken(op))
+                
+            case StringOperatorToken(op):
+                stack.push(StringOperatorToken(op))
+    
+    return stack.stack
+
+def eval(objs: List, stack: Stack = None):
+    if stack is None:
+        stack = Stack()
+    
+    i = 0
+    while i < len(objs):
+        obj = objs[i]
+        i += 1
+        match obj:
+            case NumberObj(val):
+                stack.push(NumberObj(val))
+                
+            case BooleanObj(val):
+                stack.push(BooleanObj(val))
+            
+            case StringObj(val):
+                stack.push(StringObj(val))
+                            
+            case ProgramObject(val):
+                stack.push(ProgramObject(val))
+                
             case WordToken(val):
                 if val == "+":
                     b = stack.pop()
@@ -225,10 +269,18 @@ def eval(tokens: List, stack: Stack = None):
                     else:
                         # BooleanObj
                         stack.push(f)
+                    # print(f)
                         
                 elif val == "put":
                     obj = stack.pop()
-                    print(obj.val)
+                    if isinstance(obj, NumberObj):
+                        print(obj.val)
+                    elif isinstance(obj, StringObj):
+                        print('"' + obj.val + '"')
+                    elif isinstance(obj, BooleanObj):
+                        print(obj.val)
+                    else:
+                        raise ValueError("put requires a number, string or boolean")
                     
                 elif val == "pop":
                     stack.pop()
@@ -248,8 +300,8 @@ def eval(tokens: List, stack: Stack = None):
                 elif val == "concat":
                     b = stack.pop()
                     a = stack.pop()
-                    if isinstance(a, str) and isinstance(b, str):
-                        stack.push(a + b)
+                    if isinstance(a, StringObj) and isinstance(b, StringObj):
+                        stack.push(StringObj(a.val + b.val))
                     else:
                         raise ValueError("concat requires two strings")
                 
@@ -311,26 +363,11 @@ def eval(tokens: List, stack: Stack = None):
                     while stack:
                         l.append(stack.pop())
                     stack.push(ListObject(l[::-1]))
-                
-                elif val == "{":
-                    prog = []
-                    while i < len(tokens):
-                        token = tokens[i]
-                        if isinstance(token, WordToken) and token.val == "}":
-                            break
-                        prog.append(token)
-                        i += 1
-                    
-                    stack.push(ProgramObject(prog))
-                    i += 1
-                
-                elif val == "}":
-                    raise ValueError("Unmatched }")
-                       
+                           
                 elif val == "run":
                     prog = stack.pop()
                     if isinstance(prog, ProgramObject):
-                        eval(prog.prog, stack)
+                        eval(prog.val, stack)
                     else:
                         raise ValueError("run requires a program")
                     
@@ -342,9 +379,9 @@ def eval(tokens: List, stack: Stack = None):
                         raise ValueError("if requires a program")
                     if isinstance(cond, BooleanObj):
                         if cond.val == "true":
-                            eval(if_prog.prog, stack)
+                            eval(if_prog.val, stack)
                         else:
-                            eval(else_prog.prog, stack) 
+                            eval(else_prog.val, stack) 
                     
                 elif val == "repeat":
                     procedure = stack.pop()
@@ -358,7 +395,7 @@ def eval(tokens: List, stack: Stack = None):
                         raise ValueError("repeat requires a positive Integer")
                     
                     for _ in range(n.val):
-                        eval(procedure.prog, stack)
+                        eval(procedure.val, stack)
                     
                 elif val == "while":
                     procedure = stack.pop()
@@ -367,15 +404,15 @@ def eval(tokens: List, stack: Stack = None):
                         raise ValueError("while requires both the body and the condition to be a procedure")
                     
                     # evaluate the condition
-                    eval(cond_procedure.prog, stack)
+                    eval(cond_procedure.val, stack)
                     cond = stack.pop()
                     
                     if not isinstance(cond, BooleanObj):
                         raise ValueError("while condition must evaluate to a boolean")
                     
                     while cond.val == "true":
-                        eval(procedure.prog, stack)
-                        eval(cond_procedure.prog, stack)
+                        eval(procedure.val, stack)
+                        eval(cond_procedure.val, stack)
                         cond = stack.pop() 
                     
                 elif val == "dec":
