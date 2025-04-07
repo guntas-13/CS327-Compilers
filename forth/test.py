@@ -2,13 +2,12 @@ from lexer import lex
 from vm import parse, eval
 import sys
 
-
 progFile = sys.argv[1]
 lt = [progFile]
 if len(sys.argv) > 2:
-  args = sys.argv[2:]
-  lt.extend(args)
-# print(lt)
+    args = sys.argv[2:]
+    lt.extend(args)
+print(lt)
 
 
 with open(f"./{progFile}") as file:
