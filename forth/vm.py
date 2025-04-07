@@ -67,7 +67,7 @@ class ProgramObject(Object):
     def __repr__(self):
         return f"ProgramObject({self.val})"
 
-def parse(s: str) -> List[Object]:
+def parse(s: str, args: List) -> List[Object]:
     tokens = lex(s)
     stack = Stack()
     
@@ -101,6 +101,12 @@ def parse(s: str) -> List[Object]:
                     case "{":
                         stack.push(StringObj(val))
                     
+                    case "argv":
+                        l_ = []
+                        for elt in args:
+                            l_.append(StringObj(elt))
+                        stack.push(ListObject(l_))
+                    
                     case _:       
                         stack.push(WordToken(val))
                 
@@ -132,6 +138,9 @@ def eval(objs: List, stack: Stack = None):
                             
             case ProgramObject(val):
                 stack.push(ProgramObject(val))
+            
+            case ListObject(val):
+                stack.push(ListObject(val))
                 
             case WordToken(val):
                 if val == "+":
@@ -426,10 +435,61 @@ def eval(objs: List, stack: Stack = None):
                     if not isinstance(n, NumberObj):
                         raise ValueError("inc requires a number")
                     stack.push(NumberObj(n.val + 1))
-                                    
+                 
+                elif val == "forever":
+                    procedure = stack.pop()
+                    if not isinstance(procedure, ProgramObject):
+                        raise ValueError("forever requires a program")
+                    
+                    while True:
+                        eval(procedure.val, stack)
+                        
+                elif val == "foreach":
+                    l = stack.pop()
+                    if not isinstance(l, ListObject):
+                        raise ValueError("foreach requires a list")
+                    
+                    procedure = stack.pop()
+                    if not isinstance(procedure, ProgramObject):
+                        raise ValueError("foreach requires a program")
+                    
+                    for item in l:
+                        stack.push(item)
+                        eval(procedure.val, stack)
+                        stack.pop()
+                
+                elif val == "is-number?":
+                    n = stack.pop()
+                    if isinstance(n, NumberObj):
+                        stack.push(BooleanObj("true"))
+                    else:
+                        stack.push(BooleanObj("false"))
+                        
+                elif val == "is-string?":
+                    s = stack.pop()
+                    if isinstance(s, StringObj):
+                        stack.push(BooleanObj("true"))
+                    else:
+                        stack.push(BooleanObj("false"))
+                        
+                elif val == "is-bool?":
+                    b = stack.pop()
+                    if isinstance(b, BooleanObj):
+                        stack.push(BooleanObj("true"))
+                    else:
+                        stack.push(BooleanObj("false"))
+                
+                elif val == "is-list?":
+                    l = stack.pop()
+                    if isinstance(l, ListObject):
+                        stack.push(BooleanObj("true"))
+                    else:
+                        stack.push(BooleanObj("false"))
+                                               
                 else:
                     raise ValueError(f"Unknown word: {val}")
-                  
+
+            
             case BooleanOperatorToken(op):
                 if op == "and":
                     b = stack.pop()

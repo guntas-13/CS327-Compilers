@@ -2,7 +2,14 @@ from lexer import lex
 from vm import parse, eval
 import sys
 
+
 progFile = sys.argv[1]
+lt = [progFile]
+if len(sys.argv) > 2:
+  args = sys.argv[2:]
+  lt.extend(args)
+# print(lt)
+
 
 with open(f"./{progFile}") as file:
     prog = file.read()
@@ -195,6 +202,27 @@ get dup 0 >
 if
 """
 
+prog38 = """
+0 { inc dup print } forever
+"""
+
+prog39 = """
+{ print } [ 2 3 5 7 ] foreach
+"""
+
+prog40 = """
+7 5 3 2 { + print } [ 2 3 5 7 ] foreach
+"""
+
+prog41 = """
+false is-bool? print
+"""
+
+prog42 = """
+argv len 1 > { argv 1 nth } { "y" } if
+{ dup print } forever
+"""
+
 # for t in lex(prog19):
 #     print(t)
 # eval(prog19)
@@ -202,6 +230,6 @@ if
 # for i, t in enumerate(lexons):
 #     print(f"{i}: {t}")
 
-parsed = parse(prog)
+parsed = parse(prog, lt)
 # print(parsed)
 eval(parsed)
