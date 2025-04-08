@@ -22,6 +22,9 @@ class BooleanOperatorToken(Token):
 @dataclass
 class StringOperatorToken(Token):
     op: str
+@dataclass
+class SymbolToken(Token):
+    sym: str
 
 def checkInputStr(i:int, s: str) -> Tuple[int, str]:
     i += 1
