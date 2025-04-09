@@ -17,10 +17,7 @@ class BooleanToken(Token):
 class WordToken(Token):
     val: str
 @dataclass
-class BooleanOperatorToken(Token):
-    op: str
-@dataclass
-class StringOperatorToken(Token):
+class OperatorToken(Token):
     op: str
 @dataclass
 class SymbolToken(Token):
@@ -80,6 +77,17 @@ def lex(s: str) -> List[Token]:
             i, string = checkInputStr(i, s)
             tokens.append(StringToken(string))
         
+        # symbols are like words but start with a single quote '
+        elif char == "'":
+            i += 1
+            if i >= len(s):
+                raise ValueError("Unterminated symbol")
+            start = i
+            while i < len(s) and not s[i].isspace() and s[i] != '"':
+                i += 1
+            word = s[start:i]
+            tokens.append(SymbolToken(word))
+        
         elif char.isdigit() or (char == '-' and i + 1 < len(s) and s[i + 1].isdigit()):
             i, num_str = checkInputNum(i, s)
             tokens.append(NumberToken(num_str))
@@ -94,10 +102,8 @@ def lex(s: str) -> List[Token]:
             else:
                 if word in {"true", "false"}:
                     tokens.append(BooleanToken(word))
-                elif word in {"and", "or", "not", "xor", "b=", "b!="}:
-                    tokens.append(BooleanOperatorToken(word))
-                elif word in {"s=", "s!=", "lex>", "lex<", "lex<=", "lex>="}:
-                    tokens.append(StringOperatorToken(word))
+                elif word in {"and", "or", "not", "xor", "b=", "b!=", "s=", "s!=", "lex>", "lex<", "lex<=", "lex>=", "sym="}:
+                    tokens.append(OperatorToken(word))
                 else:
                     tokens.append(WordToken(word))
 

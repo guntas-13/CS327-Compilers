@@ -37,7 +37,11 @@ class BooleanObj(Object):
 @dataclass
 class StringObj(Object):
     val: str
-    
+
+@dataclass
+class SymbolObj(Object):
+    val: str
+
 @dataclass
 class ListObject(Object):
     val: List[Object]
@@ -84,6 +88,9 @@ def parse(s: str, args: List) -> List[Object]:
             
             case StringToken(val):
                 stack.push(StringObj(val))
+            
+            case SymbolToken(val):
+                stack.push(SymbolObj(val))
                             
             case WordToken(val):
                 match val:
@@ -110,12 +117,9 @@ def parse(s: str, args: List) -> List[Object]:
                     case _:       
                         stack.push(WordToken(val))
                 
-            case BooleanOperatorToken(op):
-                stack.push(BooleanOperatorToken(op))
-                
-            case StringOperatorToken(op):
-                stack.push(StringOperatorToken(op))
-    
+            case OperatorToken(op):
+                stack.push(OperatorToken(op))
+
     return stack.stack
 
 def eval(objs: List, stack: Stack = None):
@@ -141,6 +145,9 @@ def eval(objs: List, stack: Stack = None):
             
             case ListObject(val):
                 stack.push(ListObject(val))
+            
+            case SymbolObj(val):
+                stack.push(SymbolObj(val))
                 
             case WordToken(val):
                 if val == "+":
@@ -485,12 +492,18 @@ def eval(objs: List, stack: Stack = None):
                         stack.push(BooleanObj("true"))
                     else:
                         stack.push(BooleanObj("false"))
-                                               
+                
+                elif val == "is-symbol?":
+                    s = stack.pop()
+                    if isinstance(s, SymbolObj):
+                        stack.push(BooleanObj("true"))
+                    else:
+                        stack.push(BooleanObj("false"))                               
+                
                 else:
                     raise ValueError(f"Unknown word: {val}")
-
-            
-            case BooleanOperatorToken(op):
+      
+            case OperatorToken(op):
                 if op == "and":
                     b = stack.pop()
                     a = stack.pop()
@@ -538,11 +551,7 @@ def eval(objs: List, stack: Stack = None):
                     else:
                         raise ValueError("b!= requires two booleans")
                 
-                else:
-                    raise ValueError(f"Unknown boolean operator: {op}")
-            
-            case StringOperatorToken(op):
-                if op == "s=":
+                elif op == "s=":
                     b = stack.pop()
                     a = stack.pop()
                     if isinstance(a, StringObj) and isinstance(b, StringObj):
@@ -589,6 +598,14 @@ def eval(objs: List, stack: Stack = None):
                         stack.push(BooleanObj("true" if a.val >= b.val else "false"))
                     else:
                         raise ValueError("lex<= requires two strings")
-
+                
+                elif op == "sym=":
+                    b = stack.pop()
+                    a = stack.pop()
+                    if isinstance(a, SymbolObj) and isinstance(b, SymbolObj):
+                        stack.push(BooleanObj("true" if a.val == b.val else "false"))
+                    else:
+                        raise ValueError("sym= requires two symbols")
+                
                 else:
-                    raise ValueError(f"Unknown string operator: {op}")
+                    raise ValueError(f"Unknown operator: {op}")
