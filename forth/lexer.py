@@ -79,13 +79,15 @@ def lex(s: str) -> List[Token]:
         
         # symbols are like words but start with a single quote '
         elif char == "'":
-            i += 1
             if i >= len(s):
                 raise ValueError("Unterminated symbol")
             start = i
-            while i < len(s) and not s[i].isspace() and s[i] != '"':
+            i += 1
+            while i < len(s) and (s[i].isalnum() or s[i] == '_' or s[i] == '-'):
                 i += 1
             word = s[start:i]
+            if not word or not word[1].isalpha():
+                raise ValueError(f"Invalid symbol '{word}' at position {start}")
             tokens.append(SymbolToken(word))
         
         elif char.isdigit() or (char == '-' and i + 1 < len(s) and s[i + 1].isdigit()):

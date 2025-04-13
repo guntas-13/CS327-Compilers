@@ -7,7 +7,7 @@ lt = [progFile]
 if len(sys.argv) > 2:
     args = sys.argv[2:]
     lt.extend(args)
-print(lt)
+# print(lt)
 
 
 with open(f"./{progFile}") as file:
@@ -220,6 +220,42 @@ false is-bool? print
 prog42 = """
 argv len 1 > { argv 1 nth } { "y" } if
 { dup print } forever
+"""
+
+prog43 = """
+{ dup 0 = { pop 1 } { dup dec fact * } if } 'fact def
+5 fact print
+"""
+
+prog44 = """
+{ x y + print } 'foo def
+{ { 1 } 'x def { 2 } 'y def foo } 'bar def
+bar
+"""
+
+prog45 = """
+{ x x * print } 'square def
+{ { dup } 'x def square } 'compute def
+3 compute
+"""
+
+prog46 = """
+[ 'apple 'banana 'cherry ] 1 nth is-symbol? print
+[ 'apple 'banana 'cherry ] spread 'banana sym= print
+"""
+
+prog47 = """
+{ 0 > { 'positive } { 'negative } if } 'sign def
+3 sign put
+-2 sign put
+"""
+
+prog48 = """
+{ 1 } 'x def
+{ x print } 'foo def
+foo
+{ 2 } 'x def 
+foo
 """
 
 # for t in lex(prog19):

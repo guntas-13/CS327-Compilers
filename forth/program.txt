@@ -1,2 +1,5 @@
-argv len 1 > { argv 1 nth } { "y" } if
-{ dup print } forever
+{ 1 } 'x def
+{ x print } 'foo def
+foo
+{ 2 } 'x def 
+foo

@@ -1,5 +1,5 @@
 from lexer import *
-from typing import List
+from typing import List, Dict
 class Stack:
     def __init__(self):
         self.stack = []
@@ -122,9 +122,12 @@ def parse(s: str, args: List) -> List[Object]:
 
     return stack.stack
 
-def eval(objs: List, stack: Stack = None):
+def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
     if stack is None:
         stack = Stack()
+        
+    if env is None:
+        env = {}
     
     i = 0
     while i < len(objs):
@@ -295,6 +298,8 @@ def eval(objs: List, stack: Stack = None):
                         print('"' + obj.val + '"')
                     elif isinstance(obj, BooleanObj):
                         print(obj.val)
+                    elif isinstance(obj, SymbolObj):
+                        print(obj.val)
                     else:
                         raise ValueError("put requires a number, string or boolean")
                     
@@ -383,7 +388,7 @@ def eval(objs: List, stack: Stack = None):
                 elif val == "run":
                     prog = stack.pop()
                     if isinstance(prog, ProgramObject):
-                        eval(prog.val, stack)
+                        eval(prog.val, env, stack)
                     else:
                         raise ValueError("run requires a program")
                     
@@ -395,9 +400,9 @@ def eval(objs: List, stack: Stack = None):
                         raise ValueError("if requires a program")
                     if isinstance(cond, BooleanObj):
                         if cond.val == "true":
-                            eval(if_prog.val, stack)
+                            eval(if_prog.val, env, stack)
                         else:
-                            eval(else_prog.val, stack) 
+                            eval(else_prog.val, env, stack) 
                     
                 elif val == "repeat":
                     procedure = stack.pop()
@@ -411,7 +416,7 @@ def eval(objs: List, stack: Stack = None):
                         raise ValueError("repeat requires a positive Integer")
                     
                     for _ in range(n.val):
-                        eval(procedure.val, stack)
+                        eval(procedure.val, env, stack)
                     
                 elif val == "while":
                     procedure = stack.pop()
@@ -420,15 +425,15 @@ def eval(objs: List, stack: Stack = None):
                         raise ValueError("while requires both the body and the condition to be a procedure")
                     
                     # evaluate the condition
-                    eval(cond_procedure.val, stack)
+                    eval(cond_procedure.val, env, stack)
                     cond = stack.pop()
                     
                     if not isinstance(cond, BooleanObj):
                         raise ValueError("while condition must evaluate to a boolean")
                     
                     while cond.val == "true":
-                        eval(procedure.val, stack)
-                        eval(cond_procedure.val, stack)
+                        eval(procedure.val, env, stack)
+                        eval(cond_procedure.val, env, stack)
                         cond = stack.pop() 
                     
                 elif val == "dec":
@@ -449,7 +454,7 @@ def eval(objs: List, stack: Stack = None):
                         raise ValueError("forever requires a program")
                     
                     while True:
-                        eval(procedure.val, stack)
+                        eval(procedure.val, env, stack)
                         
                 elif val == "foreach":
                     l = stack.pop()
@@ -462,7 +467,7 @@ def eval(objs: List, stack: Stack = None):
                     
                     for item in l:
                         stack.push(item)
-                        eval(procedure.val, stack)
+                        eval(procedure.val, env, stack)
                         stack.pop()
                 
                 elif val == "is-number?":
@@ -500,8 +505,39 @@ def eval(objs: List, stack: Stack = None):
                     else:
                         stack.push(BooleanObj("false"))                               
                 
+                elif val == "def":
+                    sym = stack.pop()
+                    if not isinstance(sym, SymbolObj):
+                        raise ValueError("def requires a symbol")
+                    prog = stack.pop()
+                    if not isinstance(prog, ProgramObject):
+                        raise ValueError("def requires a program")
+
+                    word = sym.val[1:]
+            
+                    if word in {"true", "false", "and", "or", "not", "xor", "b=", "b!=", "s=", 
+                                "s!=", "lex>", "lex<", "lex<=", "lex>=", "sym=", "get", "put", "pop",
+                                "dup", "rot", "+", "-", "*", "/", "^", ">", "<", ">=", "<=", "=",
+                                "argv", "if", "repeat", "while", "dec", "inc", "forever", "foreach",
+                                "is-number?", "is-string?", "is-bool?", "is-list?", "is-symbol?",
+                                "listn", "list", "nth", "spread", "concat", "print", "len",
+                                "run", "def", "is-number?", "is-string?", "is-bool?", "is-list?",
+                                "is-symbol?"}:
+                        raise ValueError(f"Symbol {word} is a builtin identifier")
+                        
+                    env[word] = prog
+                
                 else:
-                    raise ValueError(f"Unknown word: {val}")
+                    # print(env)
+                    # print("="*100)
+                    if val in env:
+                        prog = env[val]
+                        if isinstance(prog, ProgramObject):
+                            eval(prog.val, env, stack)
+                        else:
+                            raise ValueError(f"Symbol {val} is not a program")
+                    else:
+                        raise ValueError(f"Unknown word: {val}")
       
             case OperatorToken(op):
                 if op == "and":
