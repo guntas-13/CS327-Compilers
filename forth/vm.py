@@ -9,12 +9,14 @@ class Stack:
     
     def pop(self):
         if not self.stack:
-            raise IndexError("Underflow!")
+            print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nUnderflow!",end="")
+            exit(1)
         return self.stack.pop()
     
     def peek(self):
         if not self.stack:
-            raise IndexError("Underflow!")
+            print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nUnderflow!",end="")
+            exit(1)
         return self.stack[-1]
     
     def __len__(self):
@@ -98,7 +100,8 @@ def parse(s: str, args: List) -> List[Object]:
                         l = []
                         while True:
                             if not stack:
-                                raise ValueError("Unmatched {")
+                                print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nUnmatched {",end="")
+                                exit(1)
                             x = stack.pop()
                             if isinstance(x, StringObj) and x.val == "{":
                                 break
@@ -159,7 +162,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     if isinstance(a, NumberObj) and isinstance(b, NumberObj):
                         stack.push(NumberObj(a.val + b.val))
                     else:
-                        raise ValueError("Addition requires numbers")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nAddition requires numbers",end="")
+                        exit(1)
 
                 elif val == "-":
                     b = stack.pop()
@@ -167,7 +171,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     if isinstance(a, NumberObj) and isinstance(b, NumberObj):
                         stack.push(NumberObj(a.val - b.val))
                     else:
-                        raise ValueError("Subtraction requires numbers")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nSubtraction requires numbers",end="")
+                        exit(1)
                     
                 elif val == "*":
                     b = stack.pop()
@@ -175,7 +180,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     if isinstance(a, NumberObj) and isinstance(b, NumberObj):
                         stack.push(NumberObj(a.val * b.val))
                     else:
-                        raise ValueError("Multiplication requires numbers")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nMultiplication requires numbers",end="")
+                        exit(1)
                     
                 elif val == "/":
                     b = stack.pop()
@@ -183,7 +189,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     if isinstance(a, NumberObj) and isinstance(b, NumberObj):
                         stack.push(NumberObj(a.val / b.val))
                     else:
-                        raise ValueError("Division requires numbers")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nDivision requires numbers",end="")
+                        exit(1)
                     
                 elif val == "^":
                     b = stack.pop()
@@ -191,7 +198,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     if isinstance(a, NumberObj) and isinstance(b, NumberObj):
                         stack.push(NumberObj(a.val ** b.val))
                     else:
-                        raise ValueError("Exponentiation requires numbers")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nExponentiation requires numbers",end="")
+                        exit(1)
                 
                 elif val == ">":
                     b = stack.pop()
@@ -203,7 +211,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                         else:
                             stack.push(BooleanObj("false"))
                     else:
-                        raise ValueError("Greater than requires numbers")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nGreater than requires numbers",end="")
+                        exit(1)
                 
                 elif val == "<":
                     b = stack.pop()
@@ -214,7 +223,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                         else:
                             stack.push(BooleanObj("false"))
                     else:
-                        raise ValueError("Less than requires numbers")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nLess than requires numbers",end="")
+                        exit(1)
                 
                 elif val == ">=":
                     b = stack.pop()
@@ -225,7 +235,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                         else:
                             stack.push(BooleanObj("false"))
                     else:
-                        raise ValueError("Greater than or equal requires numbers")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nGreater than or equal requires numbers",end="")
+                        exit(1)
                 
                 elif val == "<=":
                     b = stack.pop()
@@ -236,7 +247,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                         else:
                             stack.push(BooleanObj("false"))
                     else:
-                        raise ValueError("Less than or equal requires numbers")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nLess than or equal requires numbers",end="")
+                        exit(1)
                 
                 elif val == "=":
                     b = stack.pop()
@@ -247,7 +259,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                         else:
                             stack.push(BooleanObj("false"))
                     else:
-                        raise ValueError("Equality requires numbers")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nEquality requires numbers",end="")
+                        exit(1)
                     
                 elif val == "get":
                     s = input()
@@ -275,10 +288,12 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                             if f in {"true", "false"}:
                                 f = BooleanObj(f)
                             else:
-                                raise ValueError("get says: Neither a number nor a string")
+                                print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nget says: Neither a number nor a string",end="")
+                                exit(1)
                         
                         else:
-                            raise ValueError("get says: Neither a number nor a string")
+                            print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nget says: Neither a number nor a string",end="")
+                            exit(1)
 
                     if isinstance(f, NumberObj):
                         if '.' in f.val:
@@ -301,7 +316,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     elif isinstance(obj, SymbolObj):
                         print(obj.val)
                     else:
-                        raise ValueError("put requires a number, string or boolean")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nput requires a number, string or boolean",end="")
+                        exit(1)
                     
                 elif val == "pop":
                     stack.pop()
@@ -312,7 +328,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     
                 elif val == "rot":
                     if len(stack) < 2:
-                        raise ValueError("rot requires at least 2 elements")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nrot requires at least 2 elements",end="")
+                        exit(1)
                     x = stack.pop()
                     y = stack.pop()
                     stack.push(x)
@@ -324,13 +341,15 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     if isinstance(a, StringObj) and isinstance(b, StringObj):
                         stack.push(StringObj(a.val + b.val))
                     else:
-                        raise ValueError("concat requires two strings")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nconcat requires two strings",end="")
+                        exit(1)
                 
                 elif val == "]":
                     l = []
                     while True:
                         if not stack:
-                            raise ValueError("Unmatched [")
+                            print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nUnmatched [",end="")
+                            exit(1)
                         x = stack.pop()
                         if isinstance(x, StringObj) and x.val == "[":
                             break
@@ -344,17 +363,21 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     n = stack.pop()
                     l = stack.pop()
                     if not isinstance(n.val, int):
-                        raise ValueError("nth requires an Integer")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nnth requires an Integer",end="")
+                        exit(1)
                     if not isinstance(l, ListObject):
-                        raise ValueError("nth requires a List")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nnth requires a List",end="")
+                        exit(1)
                     if n.val < 0 or n.val >= len(l):
-                        raise ValueError("Index out of bounds")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nIndex out of bounds",end="")
+                        exit(1)
                     stack.push(l[n.val])
                 
                 elif val == "spread":
                     l = stack.pop()
                     if not isinstance(l, ListObject):
-                        raise ValueError("spread requires a list")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nspread requires a list",end="")
+                        exit(1)
                     for item in l:
                         stack.push(item)
 
@@ -366,12 +389,14 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     if isinstance(l, ListObject):
                         stack.push(NumberObj(len(l)))
                     else:
-                        raise ValueError("len requires a List")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nlen requires a List",end="")
+                        exit(1)
                 
                 elif val == "listn":
                     n = stack.pop()
                     if not isinstance(n.val, int):
-                        raise ValueError("listn requires an Integer")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nlistn requires an Integer",end="")
+                        exit(1)
                     
                     l = []
                     for _ in range(n.val):
@@ -390,14 +415,16 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     if isinstance(prog, ProgramObject):
                         eval(prog.val, env, stack)
                     else:
-                        raise ValueError("run requires a program")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nrun requires a program",end="")
+                        exit(1)
                     
                 elif val == "if":
                     else_prog = stack.pop()
                     if_prog = stack.pop()
                     cond = stack.pop()
                     if not isinstance(if_prog, ProgramObject) or not isinstance(else_prog, ProgramObject):
-                        raise ValueError("if requires a program")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nif requires a program",end="")
+                        exit(1)
                     if isinstance(cond, BooleanObj):
                         if cond.val == "true":
                             eval(if_prog.val, env, stack)
@@ -407,13 +434,16 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                 elif val == "repeat":
                     procedure = stack.pop()
                     if not isinstance(procedure, ProgramObject):
-                        raise ValueError("repeat requires a program")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nrepeat requires a program",end="")
+                        exit(1)
                     n = stack.pop()
                     if not isinstance(n.val, int):
-                        raise ValueError("repeat requires an Integer")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nrepeat requires an Integer",end="")
+                        exit(1)
                     
                     if n.val < 0:
-                        raise ValueError("repeat requires a positive Integer")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nrepeat requires a positive Integer",end="")
+                        exit(1)
                     
                     for _ in range(n.val):
                         eval(procedure.val, env, stack)
@@ -422,14 +452,16 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     procedure = stack.pop()
                     cond_procedure = stack.pop()
                     if not isinstance(procedure, ProgramObject) or not isinstance(cond_procedure, ProgramObject):
-                        raise ValueError("while requires both the body and the condition to be a procedure")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nwhile requires both the body and the condition to be a procedure",end="")
+                        exit(1)
                     
                     # evaluate the condition
                     eval(cond_procedure.val, env, stack)
                     cond = stack.pop()
                     
                     if not isinstance(cond, BooleanObj):
-                        raise ValueError("while condition must evaluate to a boolean")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nwhile condition must evaluate to a boolean",end="")
+                        exit(1)
                     
                     while cond.val == "true":
                         eval(procedure.val, env, stack)
@@ -439,19 +471,22 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                 elif val == "dec":
                     n = stack.pop()
                     if not isinstance(n, NumberObj):
-                        raise ValueError("dec requires a number")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\ndec requires a number",end="")
+                        exit(1)
                     stack.push(NumberObj(n.val - 1))
                 
                 elif val == "inc":
                     n = stack.pop()
                     if not isinstance(n, NumberObj):
-                        raise ValueError("inc requires a number")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\ninc requires a number",end="")
+                        exit(1)
                     stack.push(NumberObj(n.val + 1))
                  
                 elif val == "forever":
                     procedure = stack.pop()
                     if not isinstance(procedure, ProgramObject):
-                        raise ValueError("forever requires a program")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nforever requires a program",end="")
+                        exit(1)
                     
                     while True:
                         eval(procedure.val, env, stack)
@@ -459,11 +494,13 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                 elif val == "foreach":
                     l = stack.pop()
                     if not isinstance(l, ListObject):
-                        raise ValueError("foreach requires a list")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nforeach requires a list",end="")
+                        exit(1)
                     
                     procedure = stack.pop()
                     if not isinstance(procedure, ProgramObject):
-                        raise ValueError("foreach requires a program")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nforeach requires a program",end="")
+                        exit(1)
                     
                     for item in l:
                         stack.push(item)
@@ -508,10 +545,12 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                 elif val == "def":
                     sym = stack.pop()
                     if not isinstance(sym, SymbolObj):
-                        raise ValueError("def requires a symbol")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\ndef requires a symbol",end="")
+                        exit(1)
                     prog = stack.pop()
                     if not isinstance(prog, ProgramObject):
-                        raise ValueError("def requires a program")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\ndef requires a program",end="")
+                        exit(1)
 
                     word = sym.val[1:]
             
@@ -523,7 +562,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                                 "listn", "list", "nth", "spread", "concat", "print", "len",
                                 "run", "def", "is-number?", "is-string?", "is-bool?", "is-list?",
                                 "is-symbol?"}:
-                        raise ValueError(f"Symbol {word} is a builtin identifier")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, f"\nSymbol {word} is a builtin identifier", end="")
+                        exit(1)
                         
                     env[word] = prog
                 
@@ -535,9 +575,11 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                         if isinstance(prog, ProgramObject):
                             eval(prog.val, env, stack)
                         else:
-                            raise ValueError(f"Symbol {val} is not a program")
+                            print("x" * 20, "RUNTIME ERROR", "x" * 20, f"\nSymbol {val} is not a program",end="")
+                            exit(1)
                     else:
-                        raise ValueError(f"Unknown word: {val}")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, f"\nUnknown word: {val}",end="")
+                        exit(1)
       
             case OperatorToken(op):
                 if op == "and":
@@ -546,7 +588,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     if isinstance(a, BooleanObj) and isinstance(b, BooleanObj):
                         stack.push(BooleanObj("true" if a.val == "true" and b.val == "true" else "false"))
                     else:
-                        raise ValueError("and requires two booleans")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nand requires two booleans",end="")
+                        exit(1)
                     
                 elif op == "or":
                     b = stack.pop()
@@ -554,14 +597,16 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     if isinstance(a, BooleanObj) and isinstance(b, BooleanObj):
                         stack.push(BooleanObj("true" if a.val == "true" or b.val == "true" else "false"))
                     else:
-                        raise ValueError("or requires two booleans")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nor requires two booleans",end="")
+                        exit(1)
                     
                 elif op == "not":
                     a = stack.pop()
                     if isinstance(a, BooleanObj):
                         stack.push(BooleanObj("true" if a.val == "false" else "false"))
                     else:
-                        raise ValueError("not requires a boolean")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nnot requires a boolean",end="")
+                        exit(1)
                 
                 elif op == "xor":
                     b = stack.pop()
@@ -569,7 +614,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     if isinstance(a, BooleanObj) and isinstance(b, BooleanObj):
                         stack.push(BooleanObj("true" if a.val != b.value else "false"))
                     else:
-                        raise ValueError("xor requires two booleans")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nxor requires two booleans",end="")
+                        exit(1)
                 
                 elif op == "b=":
                     b = stack.pop()
@@ -577,7 +623,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     if isinstance(a, BooleanObj) and isinstance(b, BooleanObj):
                         stack.push(BooleanObj("true" if a.val == b.val else "false"))
                     else:
-                        raise ValueError("b= requires two booleans")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nb= requires two booleans",end="")
+                        exit(1)
                 
                 elif op == "b!=":
                     b = stack.pop()
@@ -585,7 +632,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     if isinstance(a, BooleanObj) and isinstance(b, BooleanObj):
                         stack.push(BooleanObj("true" if a.val != b.val else "false"))
                     else:
-                        raise ValueError("b!= requires two booleans")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nb!= requires two booleans",end="")
+                        exit(1)
                 
                 elif op == "s=":
                     b = stack.pop()
@@ -593,7 +641,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     if isinstance(a, StringObj) and isinstance(b, StringObj):
                         stack.push(BooleanObj("true" if a.val == b.val else "false"))
                     else:
-                        raise ValueError("s= requires two strings")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\ns= requires two strings",end="")
+                        exit(1)
                 
                 elif op == "s!=":
                     b = stack.pop()
@@ -601,7 +650,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     if isinstance(a, StringObj) and isinstance(b, StringObj):
                         stack.push(BooleanObj("true" if a.val != b.val else "false"))
                     else:
-                        raise ValueError("s!= requires two strings")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\ns!= requires two strings",end="")
+                        exit(1)
                 
                 elif op == "lex<":
                     b = stack.pop()
@@ -609,7 +659,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     if isinstance(a, StringObj) and isinstance(b, StringObj):
                         stack.push(BooleanObj("true" if a.val < b.val else "false"))
                     else:
-                        raise ValueError("lex< requires two strings")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nlex< requires two strings",end="")
+                        exit(1)
                     
                 elif op == "lex>":
                     b = stack.pop()
@@ -617,7 +668,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     if isinstance(a, StringObj) and isinstance(b, StringObj):
                         stack.push(BooleanObj("true" if a.val > b.val else "false"))
                     else:
-                        raise ValueError("lex> requires two strings")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nlex> requires two strings",end="")
+                        exit(1)
                 
                 elif op == "lex<=":
                     b = stack.pop()
@@ -625,7 +677,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     if isinstance(a, StringObj) and isinstance(b, StringObj):
                         stack.push(BooleanObj("true" if a.val <= b.val else "false"))
                     else:
-                        raise ValueError("lex<= requires two strings")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nlex<= requires two strings",end="")
+                        exit(1)
                 
                 elif op == "lex>=":
                     b = stack.pop()
@@ -633,7 +686,8 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     if isinstance(a, StringObj) and isinstance(b, StringObj):
                         stack.push(BooleanObj("true" if a.val >= b.val else "false"))
                     else:
-                        raise ValueError("lex<= requires two strings")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nlex<= requires two strings",end="")
+                        exit(1)
                 
                 elif op == "sym=":
                     b = stack.pop()
@@ -641,7 +695,9 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     if isinstance(a, SymbolObj) and isinstance(b, SymbolObj):
                         stack.push(BooleanObj("true" if a.val == b.val else "false"))
                     else:
-                        raise ValueError("sym= requires two symbols")
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nsym= requires two symbols",end="")
+                        exit(1)
                 
                 else:
-                    raise ValueError(f"Unknown operator: {op}")
+                    print("x" * 20, "RUNTIME ERROR", "x" * 20, f"\nUnknown operator: {op}",end="")
+                    exit(1)
