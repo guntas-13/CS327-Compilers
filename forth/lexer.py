@@ -29,8 +29,12 @@ def checkInputStr(i:int, s: str) -> Tuple[int, str]:
     while i < len(s):
         char = s[i]
         if char == '"':
-            i += 1
-            return i, string
+            if i + 1 == len(s) or s[i + 1].isspace():
+                i += 1
+                return i, string
+            else:
+                print("x" * 20, "COMPILE TIME ERROR", "x" * 20, "\nInvalid character after string", end="")
+                exit(1)
 
         if char == '\\':
             i += 1
@@ -87,8 +91,14 @@ def lex(s: str) -> List[Token]:
                 exit(1)
             start = i
             i += 1
-            while i < len(s) and (s[i].isalnum() or s[i] == '_' or s[i] == '-'):
-                i += 1
+            while i < len(s):
+                if (s[i].isalnum() or s[i] == '_' or s[i] == '-'):
+                    i += 1
+                elif s[i].isspace():
+                    break
+                else:
+                    print("x" * 20, "COMPILE TIME ERROR", "x" * 20, f"\nInvalid symbol character '{s[i]}' at position {i}")
+                    exit(1)
             word = s[start:i]
             if not word or not word[1].isalpha():
                 print("x" * 20, "COMPILE TIME ERROR", "x" * 20, f"\nInvalid symbol '{word}' at position {start}")
@@ -104,14 +114,15 @@ def lex(s: str) -> List[Token]:
             while i < len(s) and not s[i].isspace() and s[i] != '"':
                 i += 1
             word = s[start:i]
-            if any(c.isdigit() for c in word) and not word.isdigit():
-                print("x" * 20, "COMPILE TIME ERROR", "x" * 20, f"\nInvalid word '{word}' at position {start}")
-                exit(1)
+            
+            if word in {"true", "false"}:
+                tokens.append(BooleanToken(word))
+            elif word in {"and", "or", "not", "xor", "b=", "b!=", "s=", "s!=", "lex>", "lex<", "lex<=", "lex>=", "sym="}:
+                tokens.append(OperatorToken(word))
             else:
-                if word in {"true", "false"}:
-                    tokens.append(BooleanToken(word))
-                elif word in {"and", "or", "not", "xor", "b=", "b!=", "s=", "s!=", "lex>", "lex<", "lex<=", "lex>=", "sym="}:
-                    tokens.append(OperatorToken(word))
+                if word[0].isdigit():
+                    print("x" * 20, "COMPILE TIME ERROR", "x" * 20, f"\nInvalid word '{word}' at position {start}")
+                    exit(1)
                 else:
                     tokens.append(WordToken(word))
 

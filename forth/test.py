@@ -258,6 +258,42 @@ foo
 foo
 """
 
+prog49 = """
+{ { 2 * put } [ 1 2 3 ] foreach } 'double def
+double
+
+"-------------------------------------" print
+
+{ { 2 * } [ 1 2 3 ] foreach } 'double def
+double put put put
+"""
+
+prog50 = """
+1 { dup } 'fact def fact put put
+"""
+
+prog51 = """
+'a 'hello put 'a dup is-symbol? pop sym= put
+'hello is-symbol? put
+"\"" put
+"""
+
+prog52 = """
+{ dup 0 = { pop true } { dec odd } if } 'even def
+{ dup 0 = { pop false } { dec even } if } 'odd def
+5 even put
+"""
+
+prog53 = """
+{
+  dup 1 <=
+  { pop 1 } 
+  { dup dec fib rot dec dec fib + } 
+  if 
+} 'fib def
+10 fib print
+"""
+
 # for t in lex(prog19):
 #     print(t)
 # eval(prog19)
