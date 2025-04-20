@@ -211,5 +211,4 @@ while (i < n)
     log dp[i];
     i := i + 1;
 }
-log ();
 maxL;
