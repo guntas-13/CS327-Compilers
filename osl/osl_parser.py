@@ -128,16 +128,16 @@ def parse(s: str) -> AST:
         # expression -> expB | assignment
         # first parse the lhs, if it's a variable and next token is ':=' then it's an assignment
         # otherwise it's an expB so return it as is.
-        ast = parse_bool()
+        ast = parse_expB()
         if not isinstance(ast, Variable) and peek() == OperatorToken(":="):
             raise ParseErr(f"Expected variable on the left side of assignment := operator at index {i}")
         if isinstance(ast, Variable) and peek() == OperatorToken(":="):
             consume(OperatorToken, ":=")
-            e1 = parse_bool()
+            e1 = parse_expB()
             return Assign(ast, e1)
         return ast
 
-    def parse_bool():
+    def parse_expB():
         ast = parse_comparison()
         while True:
             match peek():
@@ -209,7 +209,7 @@ def parse(s: str) -> AST:
             case OperatorToken("["):
                 return parse_arr_decl()
             case _:
-                return parse_call()
+                return parse_secondary()
 
     def parse_arr_decl():
         consume(OperatorToken, "[")
@@ -217,7 +217,7 @@ def parse(s: str) -> AST:
         ctr = 0
         if peek() != OperatorToken("]"):
             while True:
-                arrr.append(parse_bool()) # parse_expression() will allow assignments also, but we don't allow them for now
+                arrr.append(parse_expB()) # parse_expression() will allow assignments also, but we don't allow them for now
                 ctr += 1
                 if peek() == OperatorToken(","):
                     consume(OperatorToken, ",")
@@ -226,7 +226,7 @@ def parse(s: str) -> AST:
         consume(OperatorToken, "]")
         return Arr(arrr, ctr) # lhs1 is now a CallFun() or a Variable
 
-    def parse_call():
+    def parse_secondary():
         lhs = parse_primary()
         if isinstance(lhs, Variable):
             match peek():
@@ -248,7 +248,7 @@ def parse(s: str) -> AST:
         args = []
         if peek() != OperatorToken(")"):
             while True:
-                args.append(parse_bool()) # parse_expression() will allow assignments also, but we don't allow them for now
+                args.append(parse_expB()) # parse_expression() will allow assignments also, but we don't allow them for now
                 if peek() == OperatorToken(","):
                     consume(OperatorToken, ",")
                 else:
@@ -264,7 +264,7 @@ def parse(s: str) -> AST:
         
     def parse_ac(lhs1):
         consume(OperatorToken, "[")
-        index = parse_bool()
+        index = parse_expB()
         consume(OperatorToken, "]")
         return ArrAccess(lhs1, index) # lhs1 is now a CallFun() or a Variable
     
@@ -285,7 +285,7 @@ def parse(s: str) -> AST:
             
             case OperatorToken("("):
                 consume()
-                ast = parse_bool()
+                ast = parse_expB()
                 consume(OperatorToken, ")")
                 return ast
             case _:
