@@ -60,7 +60,7 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
                 rargs = [e_(arg) for arg in args]
                 
                 # use the environment that was copied when the function was defined
-                call_env = fun.env.copy()
+                call_env = fun.env
                 call_env.enter_scope()
                 for param, arg in zip(fun.params, rargs):
                     call_env.add(f"{param.varName}:{param.id}", arg)
@@ -73,7 +73,7 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
                     rargs = [e_(arg) for arg in args]
                     
                     # use the environment that was copied when the function was defined
-                    call_env = fun.env.copy()
+                    call_env = fun.env
                     call_env.enter_scope()
                     for param, arg in zip(fun.params, rargs):
                         call_env.add(f"{param.varName}:{param.id}", arg)
