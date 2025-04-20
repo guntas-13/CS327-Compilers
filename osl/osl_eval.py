@@ -66,14 +66,10 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
                     call_env.add(f"{param.varName}:{param.id}", arg)
                 
                 rbody = e(fun.body, call_env)
-                # print("#"*50)
-                # print(rbody)
-                # print("#"*50)
                 return rbody
             else:
                 if isinstance(fn, CallFun):
                     fun = e_(fn)
-                    # fun = env.get(f"{fnvar.÷varName}:{fnvar.id}")
                     rargs = [e_(arg) for arg in args]
                     
                     # use the environment that was copied when the function was defined
@@ -83,9 +79,6 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
                         call_env.add(f"{param.varName}:{param.id}", arg)
                     
                     rbody = e(fun.body, call_env)
-                    # print("**"*50)
-                    # print(rbody)
-                    # print("**"*50)
                     return rbody
 
         case Arr(arr, size):
