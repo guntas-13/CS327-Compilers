@@ -123,7 +123,7 @@ def parse(s: str) -> AST:
             decls.append(decl)
         consume(OperatorToken, "}")
         return Statements(decls) if decls else Statements([])
-    
+
     def parse_expression():
         # expression -> expB | assignment
         # first parse the lhs, if it's a variable and next token is ':=' then it's an assignment
@@ -136,7 +136,7 @@ def parse(s: str) -> AST:
             e1 = parse_bool()
             return Assign(ast, e1)
         return ast
-    
+
     def parse_bool():
         ast = parse_comparison()
         while True:
@@ -187,9 +187,9 @@ def parse(s: str) -> AST:
                     ast = BinOp("%", ast, parse_exponentiation())
                 case _:
                     return ast
-    
+
     def parse_exponentiation():
-        ast = parse_atom()
+        ast = parse_unary()
         while True:
             match peek():
                 case OperatorToken('^'):
@@ -198,7 +198,77 @@ def parse(s: str) -> AST:
                 case _:
                     return ast
 
-    def parse_atom():
+    def parse_unary():
+        match peek():
+            case OperatorToken('-'):
+                consume()
+                return UnOp("-", parse_unary())
+            case OperatorToken('~'):
+                consume()
+                return UnOp("~", parse_unary())
+            case OperatorToken("["):
+                return parse_arr_decl()
+            case _:
+                return parse_call()
+
+    def parse_arr_decl():
+        consume(OperatorToken, "[")
+        arrr = []
+        ctr = 0
+        if peek() != OperatorToken("]"):
+            while True:
+                arrr.append(parse_bool()) # parse_expression() will allow assignments also, but we don't allow them for now
+                ctr += 1
+                if peek() == OperatorToken(","):
+                    consume(OperatorToken, ",")
+                else:
+                    break
+        consume(OperatorToken, "]")
+        return Arr(arrr, ctr) # lhs1 is now a CallFun() or a Variable
+
+    def parse_call():
+        lhs = parse_primary()
+        if isinstance(lhs, Variable):
+            match peek():
+                case OperatorToken('('):
+                    return parse_calls(lhs)
+                case OperatorToken('['):
+                    return parse_arr_accesses(lhs)
+        return lhs
+
+    def parse_calls(lhs1):
+        lhs = parse_cl(lhs1)
+        if peek() == OperatorToken('('):
+            return parse_calls(lhs)
+        return lhs
+
+           
+    def parse_cl(lhs1):
+        consume(OperatorToken, "(")
+        args = []
+        if peek() != OperatorToken(")"):
+            while True:
+                args.append(parse_bool()) # parse_expression() will allow assignments also, but we don't allow them for now
+                if peek() == OperatorToken(","):
+                    consume(OperatorToken, ",")
+                else:
+                    break
+        consume(OperatorToken, ")")
+        return CallFun(lhs1, args) # lhs1 is now a CallFun() or a Variable
+    
+    def parse_arr_accesses(lhs1):
+        lhs = parse_ac(lhs1)
+        if peek() == OperatorToken('['):
+            return parse_arr_accesses(lhs)
+        return lhs
+        
+    def parse_ac(lhs1):
+        consume(OperatorToken, "[")
+        index = parse_bool()
+        consume(OperatorToken, "]")
+        return ArrAccess(lhs1, index) # lhs1 is now a CallFun() or a Variable
+    
+    def parse_primary():
         match peek():
             case NumberToken(v):
                 consume()
@@ -213,31 +283,9 @@ def parse(s: str) -> AST:
                 consume()
                 return Variable(varName)
             
-            case FunCallToken(_):
-                fn_name = consume(FunCallToken).funName
-                consume(OperatorToken, "(")
-                args = []
-                if peek() != OperatorToken(")"):
-                    while True:
-                        args.append(parse_expression())
-                        if peek() == OperatorToken(","):
-                            consume(OperatorToken, ",")
-                        else:
-                            break
-                consume(OperatorToken, ")")
-                return CallFun(Variable(fn_name), args)
-            
-            case OperatorToken('-'):
-                consume()
-                return UnOp("-", parse_atom())
-            
-            case OperatorToken('\u221a'):
-                consume()
-                return UnOp("\u221a", parse_atom())
-            
             case OperatorToken("("):
                 consume()
-                ast = parse_expression()
+                ast = parse_bool()
                 consume(OperatorToken, ")")
                 return ast
             case _:

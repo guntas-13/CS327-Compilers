@@ -24,9 +24,9 @@ class VariableToken(Token):
 class StringToken(Token):
     val: str
 
-@dataclass
-class FunCallToken(Token):
-    funName: str
+# @dataclass
+# class FunCallToken(Token):
+#     funName: str
 
 
 class Environment:
@@ -118,6 +118,16 @@ class LetFun(AST):
 class CallFun(AST):
     fn: AST     # considering functions as first-class just like variables else it'll be str
     args: List[AST]
+
+@dataclass
+class Arr(AST):
+    arr: List[AST]
+    size: int
+
+@dataclass
+class ArrAccess(AST):
+    arr: AST
+    index: AST
     
 @dataclass
 class FunObj:

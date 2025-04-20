@@ -3,7 +3,6 @@ from cosl import *
 
 def lex(s: str) -> Iterator[Token]:
     i = 0
-    prev_token = None
 
     while True:
         while i < len(s) and s[i].isspace():
@@ -18,23 +17,11 @@ def lex(s: str) -> Iterator[Token]:
                 i += 1
                 name = s[start:i]
 
-            if name in {"if", "else", "var", "in", "def", "log", "return", "while"}:
-                prev_token = KeyWordToken(name)
-                yield prev_token
-
-            # If preceded by `fn`, it's a function definition
-            elif isinstance(prev_token, KeyWordToken) and prev_token.op == "fn":
-                prev_token = VariableToken(name)
-                yield prev_token
-
-            # If followed by '(', it's a function call
-            elif i < len(s) and s[i] == "(":
-                prev_token = FunCallToken(name)
-                yield prev_token
+            if name in {"if", "else", "var", "def", "log", "return", "while"}:
+                yield KeyWordToken(name)
 
             else:
-                prev_token = VariableToken(name)
-                yield prev_token
+                yield VariableToken(name)
         
         elif s[i] == '/' and i + 1 < len(s) and s[i + 1] == '/':
             i += 2
@@ -101,7 +88,7 @@ def lex(s: str) -> Iterator[Token]:
                 prev_token = OperatorToken(s[i:i+2])
                 yield prev_token
                 i += 2
-            elif s[i] in {'+', '*', '/', '^', '-', '(', ')', '<', '>', '=', '%', '\u221a', ",", "{", "}", ";"}:
+            elif s[i] in {'+', '*', '/', '^', '-', '(', ')', '<', '>', '=', '%', '\u221a', ",", "{", "}", ";", '[', ']', '~'}:
                 prev_token = OperatorToken(s[i])
                 yield prev_token
                 i += 1
