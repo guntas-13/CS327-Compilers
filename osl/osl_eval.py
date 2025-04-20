@@ -37,21 +37,43 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             # Closure -> Copy of Environment taken along with the declaration!
             funObj = FunObj(params, body, None)
             env.add(f"{varName}:{i}", funObj)
-            funObj.env = env.copy()
+            funObj.env = env
             return None
         
-        case CallFun(Variable(varName, i), args):
-            fun = env.get(f"{varName}:{i}")
-            rargs = [e_(arg) for arg in args]
-            
-            # use the environment that was copied when the function was defined
-            call_env = fun.env.copy()
-            call_env.enter_scope()
-            for param, arg in zip(fun.params, rargs):
-                call_env.add(f"{param.varName}:{param.id}", arg)
-            
-            rbody = e(fun.body, call_env)
-            return rbody
+        case CallFun(fn, args):
+            if isinstance(fn, Variable):
+                fun = env.get(f"{fn.varName}:{fn.id}")
+                rargs = [e_(arg) for arg in args]
+                
+                # use the environment that was copied when the function was defined
+                call_env = fun.env.copy()
+                call_env.enter_scope()
+                for param, arg in zip(fun.params, rargs):
+                    call_env.add(f"{param.varName}:{param.id}", arg)
+                
+                rbody = e(fun.body, call_env)
+                # print("#"*50)
+                # print(rbody)
+                # print("#"*50)
+                return rbody
+            else:
+                if isinstance(fn, CallFun):
+                    fun = e_(fn)
+                    # fun = env.get(f"{fnvar.÷varName}:{fnvar.id}")
+                    rargs = [e_(arg) for arg in args]
+                    
+                    # use the environment that was copied when the function was defined
+                    call_env = fun.env.copy()
+                    call_env.enter_scope()
+                    for param, arg in zip(fun.params, rargs):
+                        call_env.add(f"{param.varName}:{param.id}", arg)
+                    
+                    rbody = e(fun.body, call_env)
+                    # print("**"*50)
+                    # print(rbody)
+                    # print("**"*50)
+                    return rbody
+
         
         case Statements(stmts):
             env.enter_scope()

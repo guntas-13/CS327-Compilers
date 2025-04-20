@@ -1,8 +1,8 @@
 // var z := 5;
-// fn fact(n){
+// def fact(n){
 //     // var x:= n;
 //     // return x;
-//     // fn h(u){
+//     // def h(u){
 //     //     var o:= u;
 //     // }
 //     if(n = 0){
@@ -13,7 +13,7 @@
 // log fact(5);
 
 
-// fn g(m){
+// def g(m){
 //     var y:= m;
 //     return y;
 // }
@@ -21,7 +21,7 @@
 
 // print(fact(10));
 
-// fn f(a){
+// def f(a){
 //     return a+2;
 // }
 // f(2);
@@ -29,11 +29,13 @@
 
 
 // var x := 10;
-// fn f(a){
-//     // log x;
+// def f(a)
+// {
+//     log x;
 //     x := a;
-//     // var y := x;
-//     fn g(y){
+//     var y := x;
+//     def g(y)
+//     {
 //         x := y;
 //         return x;
 //     }
@@ -42,17 +44,32 @@
 //     return x;
 // }
 // log f(5);
-// log x;
+// x;
 
+
+// var x := 5;
+// def f(y)
+// {
+//     return x;
+// }
+
+// def g(z)
+// {
+//     var x := 6;
+//     return f(z);
+// }
+// log(g(10));
+// x := 7;
+// g(10);
 
 // To do: (Fix the error in the following code)
 
 
-// fn f1()
+// def f1()
 // {
 //     var x := 10;
 //     // return x;
-//     fn f2(t)
+//     def f2(t)
 //     {
 //         return x*t;
 //     }
@@ -93,16 +110,18 @@ var x := 5;
 
 def foo(y)
 {
-    x := y;
+    // x := y;
     def bar(z)
     {
-        x := z;
+        log x;
+        // x := z;
         // def foobar()
         // {
         //     x := 20;
         //     return x;
         // }
-        log x;
+        // log x;
+        return x;
         // return foobar;
     }
     log x;
@@ -112,7 +131,8 @@ def foo(y)
 var f := foo(46);
 var g := f(12);
 log g;
-log foo(46)(12);
+x := 20;
+foo(46)(12);
 
 
 // var x := 1;

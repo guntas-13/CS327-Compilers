@@ -349,6 +349,7 @@ def resolve(program: AST, env: Environment = None) -> AST:
             le = resolve_(left)
             ri = resolve_(right)
             return BinOp(op, le, ri)
+        
         case UnOp(op, right):
             ri = resolve_(right)
             return UnOp(op, ri)
