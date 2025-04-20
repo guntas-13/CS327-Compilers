@@ -33,6 +33,20 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             env.update(f"{varName}:{i}", v1)
             return None
         
+        case AssignArr(ArrAccess(arr, index) as arrN, e1):
+            indices = []
+            while isinstance(arrN, ArrAccess):
+                index = e_(arrN.index)
+                indices.append(index)
+                arrN = arrN.arr
+            indices = indices[::-1]
+            arrNode = env.get(f"{arrN.varName}:{arrN.id}")
+            ptr = arrNode
+            for i in indices[:-1]:
+                ptr = ptr.arr[i]
+            ptr.arr[indices[-1]] = e_(e1)
+            return None
+
         case LetFun(Variable(varName, i), params, body):
             # Closure -> Copy of Environment taken along with the declaration!
             funObj = FunObj(params, body, None)
@@ -77,22 +91,19 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
         case Arr(arr, size):
             return Arr([e_(elem) for elem in arr], size)
         
-        case ArrAccess(arr, index):
-            if isinstance(arr, Variable):
-                arrNode = env.get(f"{arr.varName}:{arr.id}")
-                index = e_(index)
-                if isinstance(arrNode, Arr) and 0 <= index < arrNode.size:
-                    return arrNode.arr[index]
-                else:
-                    raise IndexError(f"Index {index} out of bounds for array {arr.varName}")
-            
-            if isinstance(arr, ArrAccess):
-                arrNode = e_(arr)
-                index = e_(index)
-                if isinstance(arrNode, Arr) and 0 <= index < arrNode.size:
-                    return arrNode.arr[index]
-                else:
-                    raise IndexError(f"Index {index} out of bounds")
+        case ArrAccess(arr, index) as arrN:
+            indices = []
+            while isinstance(arrN, ArrAccess):
+                index = e_(arrN.index)
+                indices.append(index)
+                arrN = arrN.arr
+            indices = indices[::-1]
+            arrNode = env.get(f"{arrN.varName}:{arrN.id}")
+            ptr = arrNode
+            for i in indices:
+                ptr = ptr.arr[i]
+            return ptr
+
         
         case Statements(stmts):
             env.enter_scope()

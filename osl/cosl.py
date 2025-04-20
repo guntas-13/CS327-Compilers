@@ -104,6 +104,11 @@ class Assign(AST):
     e1: AST
 
 @dataclass
+class AssignArr(AST):
+    ArrAccessNode: AST
+    e1: AST
+
+@dataclass
 class Variable(AST):
     varName: str
     id: int = None

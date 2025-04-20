@@ -129,12 +129,16 @@ def parse(s: str) -> AST:
         # first parse the lhs, if it's a variable and next token is ':=' then it's an assignment
         # otherwise it's an expB so return it as is.
         ast = parse_expB()
-        if not isinstance(ast, Variable) and peek() == OperatorToken(":="):
-            raise ParseErr(f"Expected variable on the left side of assignment := operator at index {i}")
+        if not (isinstance(ast, Variable) or isinstance(ast, ArrAccess)) and peek() == OperatorToken(":="):
+            raise ParseErr(f"Expected variable or array on the left side of assignment := operator at index {i}")
         if isinstance(ast, Variable) and peek() == OperatorToken(":="):
             consume(OperatorToken, ":=")
             e1 = parse_expB()
             return Assign(ast, e1)
+        if isinstance(ast, ArrAccess) and peek() == OperatorToken(":="):
+            consume(OperatorToken, ":=")
+            e1 = parse_expB()
+            return AssignArr(ast, e1)
         return ast
 
     def parse_expB():
@@ -323,6 +327,12 @@ def resolve(program: AST, env: Environment = None) -> AST:
             re1 = resolve_(e1)
             return Assign(Variable(varName, env.get(varName)), re1)
         
+        case AssignArr(ArrAccess(arr, index), e1):
+            rarr = resolve_(arr)
+            index = resolve_(index)
+            re1 = resolve_(e1)
+            return AssignArr(ArrAccess(rarr, index), re1)
+    
         case LetFun(Variable(varName, _), params, body):
             env.add(varName, i := fresh())
             env.enter_scope()
