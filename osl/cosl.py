@@ -137,7 +137,12 @@ class PrintStmt(AST):
 @dataclass
 class ReturnStmt(AST):
     expr: Optional[AST]
-    
+
+@dataclass
+class WhileStmt(AST):
+    cond: AST
+    body: AST
+
 @dataclass
 class Program(AST):
     decls: List[AST]

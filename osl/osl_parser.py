@@ -36,7 +36,7 @@ def parse(s: str) -> AST:
     
     def parse_declaration():
         match peek():
-            case KeyWordToken("fn"):
+            case KeyWordToken("def"):
                 return parse_func()
             case KeyWordToken("var"):
                 return parse_let()
@@ -44,7 +44,7 @@ def parse(s: str) -> AST:
                 return parse_statement()
             
     def parse_func():
-        consume(KeyWordToken, "fn")
+        consume(KeyWordToken, "def")
         func_name = consume(VariableToken)
         
         consume(OperatorToken, "(")
@@ -83,6 +83,13 @@ def parse(s: str) -> AST:
                 # consume(OperatorToken, ")")
                 consume(OperatorToken, ";")
                 return PrintStmt(expr)
+
+            case KeyWordToken("while"):
+                consume(KeyWordToken, "while")
+                expr = parse_expression()
+                body = parse_block()
+                return WhileStmt(expr, body)
+            
             case KeyWordToken("return"):
                 consume(KeyWordToken, "return")
                 if peek() != OperatorToken(";"):
@@ -314,3 +321,8 @@ def resolve(program: AST, env: Environment = None) -> AST:
         
         case ReturnStmt(expr):
             return ReturnStmt(resolve_(expr))
+        
+        case WhileStmt(condition, body):
+            condition = resolve_(condition)
+            body = resolve_(body)
+            return WhileStmt(condition, body)

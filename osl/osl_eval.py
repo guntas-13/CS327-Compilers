@@ -64,6 +64,13 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             env.exit_scope()
             return res
         
+        case WhileStmt(cond, body):
+            while e_(cond):
+                res = e_(body)
+                if res is not None:
+                    return res
+            return None
+        
         case PrintStmt(expr):
             print(e_(expr))
             return
