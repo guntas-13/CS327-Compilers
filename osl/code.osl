@@ -106,33 +106,33 @@
 
 
 
-var x := 5;
+// var x := 5;
 
-def foo(y)
-{
-    // x := y;
-    def bar(z)
-    {
-        log x;
-        // x := z;
-        // def foobar()
-        // {
-        //     x := 20;
-        //     return x;
-        // }
-        // log x;
-        return x;
-        // return foobar;
-    }
-    log x;
-    return bar;
-}
+// def foo(y)
+// {
+//     // x := y;
+//     def bar(z)
+//     {
+//         log x;
+//         // x := z;
+//         // def foobar()
+//         // {
+//         //     x := 20;
+//         //     return x;
+//         // }
+//         // log x;
+//         return x;
+//         // return foobar;
+//     }
+//     log x;
+//     return bar;
+// }
 
-var f := foo(46);
-var g := f(12);
-log g;
-x := 20;
-foo(46)(12);
+// var f := foo(46);
+// var g := f(12);
+// log g;
+// x := 20;
+// foo(46)(12);
 
 
 // var x := 1;
@@ -148,9 +148,19 @@ foo(46)(12);
 //     x := x + 1;
 // }
 
-// var arr := [1,2,3,4,5];
-// log arr[0];
+var arr := [1,2+5,3,4,5];
+log arr[2+2];
+log arr[1];
 
-// var arr2 := [[1,2],2,3,4,5];
-// log arr2[0][1];
+var arr2 := [[1,2],2,3,4,5];
+log arr2[0][0 + arr[0]];
 
+var b := 10;
+var arr3 := [b, b+1, b+2, b+3, b+4];
+
+var i := 0;
+while (i < 5)
+{
+    log arr3[i];
+    i := i + 1;
+}

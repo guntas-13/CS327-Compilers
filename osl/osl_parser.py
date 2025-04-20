@@ -340,6 +340,15 @@ def resolve(program: AST, env: Environment = None) -> AST:
             env.exit_scope()
             return Statements(stmts)
         
+        case ArrAccess(arr, index):
+            arr = resolve_(arr)
+            index = resolve_(index)
+            return ArrAccess(arr, index)
+        
+        case Arr(arr, size):
+            new_arr = [resolve_(elem) for elem in arr]
+            return Arr(new_arr, size)
+        
         case CallFun(fn, args):
             rfn = resolve_(fn)
             rargs = [resolve_(arg) for arg in args]

@@ -74,6 +74,25 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
                     # print("**"*50)
                     return rbody
 
+        case Arr(arr, size):
+            return Arr([e_(elem) for elem in arr], size)
+        
+        case ArrAccess(arr, index):
+            if isinstance(arr, Variable):
+                arrNode = env.get(f"{arr.varName}:{arr.id}")
+                index = e_(index)
+                if isinstance(arrNode, Arr) and 0 <= index < arrNode.size:
+                    return arrNode.arr[index]
+                else:
+                    raise IndexError(f"Index {index} out of bounds for array {arr.varName}")
+            
+            if isinstance(arr, ArrAccess):
+                arrNode = e_(arr)
+                index = e_(index)
+                if isinstance(arrNode, Arr) and 0 <= index < arrNode.size:
+                    return arrNode.arr[index]
+                else:
+                    raise IndexError(f"Index {index} out of bounds")
         
         case Statements(stmts):
             env.enter_scope()
