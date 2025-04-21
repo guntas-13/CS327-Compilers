@@ -170,5 +170,5 @@ class ParseErr(Exception):
     pass
 
 @dataclass
-class StringLiteral(AST):
+class Character(AST):
     val: str

@@ -19,7 +19,7 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
         case Number(val):
             return val
         
-        case StringLiteral(val):
+        case Character(val):
             return val
         
         case Variable(varName, i):
@@ -136,7 +136,7 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             return None
         
         case PrintStmt(expr):
-            pprint(e_(expr))
+            print(e_(expr))
             return
         
         case ReturnStmt(expr):

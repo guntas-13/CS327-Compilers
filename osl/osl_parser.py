@@ -288,7 +288,7 @@ def parse(s: str) -> AST:
             
             case StringToken(v):
                 consume()
-                return StringLiteral(v)
+                return Arr([Character(c) for c in v], len(v))
             
             case VariableToken(varName):
                 consume()
@@ -322,7 +322,7 @@ def resolve(program: AST, env: Environment = None) -> AST:
         case Number(_) as N:
             return N
         
-        case StringLiteral(_) as S:
+        case Character(_) as S:
             return S
         
         case Let(Variable(varName, _), e1):
