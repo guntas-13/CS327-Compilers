@@ -1,4 +1,6 @@
 from osl_parser import *
+from pprint import pprint
+from copy import deepcopy
 
 def e(tree: AST, env: Environment = None) -> int | float | bool:
     if env is None:
@@ -45,6 +47,23 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             for i in indices[:-1]:
                 ptr = ptr.arr[i]
             ptr.arr[indices[-1]] = e_(e1)
+            return None
+        
+        case ArrDecl(ArrAccess(arr, index) as arrN) as arrD:
+            indices = []
+            while isinstance(arrN, ArrAccess):
+                # print(arrN.index)
+                index = e_(arrN.index)
+                indices.append(index)
+                arrN = arrN.arr
+            temparr = Arr([0 for _ in range(indices[0])], indices[0])
+            ctr = 1
+            while ctr < len(indices):
+                newarr = Arr([deepcopy(temparr) for _ in range(indices[ctr])], indices[ctr])
+                temparr = newarr
+                ctr += 1
+            
+            env.add(f"{arrN.varName}:{arrN.id}", newarr)
             return None
 
         case LetFun(Variable(varName, i), params, body):
@@ -117,7 +136,7 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             return None
         
         case PrintStmt(expr):
-            print(e_(expr))
+            pprint(e_(expr))
             return
         
         case ReturnStmt(expr):

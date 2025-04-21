@@ -64,13 +64,20 @@ def parse(s: str) -> AST:
     
     def parse_let():
         consume(KeyWordToken, "var")
-        var = Variable(consume(VariableToken).varName)
-        e1 = None
-        if peek() == OperatorToken(":="):
-            consume(OperatorToken, ":=")
-            e1 = parse_expression()
-        consume(OperatorToken, ";")
-        return Let(var, e1)
+        # var = Variable(consume(VariableToken).varName)
+        lhs = parse_secondary()
+        if isinstance(lhs, Variable):
+            e1 = None
+            if peek() == OperatorToken(":="):
+                consume(OperatorToken, ":=")
+                e1 = parse_expression()
+            consume(OperatorToken, ";")
+            return Let(lhs, e1)
+        elif isinstance(lhs, ArrAccess):
+            if peek() == OperatorToken(":="):
+                raise ParseErr("To initialize an array, don't specify the size in the declaration")
+            consume(OperatorToken, ";")
+            return ArrDecl(lhs)
     
     def parse_statement():
         match peek():
@@ -322,6 +329,16 @@ def resolve(program: AST, env: Environment = None) -> AST:
             re1 = resolve_(e1) if e1 else None
             env.add(varName, i := fresh())
             return Let(Variable(varName, i), re1)
+        
+        case ArrDecl(ArrAccess(arr) as arrD) as arrDecl:
+            while isinstance(arrD, ArrAccess) and isinstance(arrD.arr, ArrAccess):
+                arrD.index = resolve_(arrD.index)
+                arrD = arrD.arr
+            # print(arrD)
+            arrD.index = resolve_(arrD.index)
+            env.add(arrD.arr.varName, i := fresh())
+            arrD.arr = Variable(arrD.arr.varName, env.get(arrD.arr.varName))
+            return arrDecl
         
         case Assign(Variable(varName, _), e1):
             re1 = resolve_(e1)
