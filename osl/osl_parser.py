@@ -286,6 +286,10 @@ def parse(s: str) -> AST:
                 val = float(v) if '.' in v else int(v)
                 return Number(val)
             
+            case CharToken(c):
+                consume()
+                return Character(c)
+            
             case StringToken(v):
                 consume()
                 return Arr([Character(c) for c in v], len(v))

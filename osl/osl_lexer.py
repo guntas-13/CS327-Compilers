@@ -28,6 +28,19 @@ def lex(s: str) -> Iterator[Token]:
             while i < len(s) and s[i] != '\n':
                 i += 1
         
+        elif s[i] == "'":
+            i += 1
+            if i < len(s) and s[i] != "'":
+                char = s[i]
+                i += 1
+                if i < len(s) and s[i] == "'":
+                    i += 1
+                    yield CharToken(char)
+                else:
+                    raise ValueError("Unterminated character literal")
+            else:
+                raise ValueError("Empty character literal")
+        
         elif s[i] == '"':
             i += 1
             start = i

@@ -261,6 +261,7 @@
 // maxL;
 
 var s := "Guntas";
+s[0] := 'g';
 var i := 0;
 while (i < 6)
 {

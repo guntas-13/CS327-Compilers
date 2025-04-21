@@ -23,6 +23,10 @@ class VariableToken(Token):
 @dataclass
 class StringToken(Token):
     val: str
+    
+@dataclass
+class CharToken(Token):
+    val: str
 
 # @dataclass
 # class FunCallToken(Token):
