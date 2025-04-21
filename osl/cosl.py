@@ -133,7 +133,11 @@ class Arr(AST):
 class ArrAccess(AST):
     arr: AST
     index: AST
-    
+
+@dataclass
+class ArrDecl(AST):
+    arr: AST
+
 @dataclass
 class FunObj:
     params: List[AST]

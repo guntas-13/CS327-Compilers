@@ -154,13 +154,18 @@
 // log arr[1];
 
 // var b := 1;
-var arr2 := [[1,2],[3,4],3,4,5];
-arr2[1][0] := 10;
-log arr2[1][0];
+// var arr2 := [[1,2],[3,4],3,4,5];
+// arr2[1][0] := 10;
+// log arr2[1][0];
 
-var arr5 := [3,4,5];
-arr5[2] := 12;
-log arr5[2];
+// var arr6[2][3][4];
+
+
+// var arr7[13];
+
+// var arr5 := [3,4,5];
+// arr5[2] := 12;
+// log arr5[2];
 // arr2[b] := 2;
 // log arr2[0][0 + arr[0]];
 
@@ -173,3 +178,44 @@ log arr5[2];
 //     log arr3[i];
 //     i := i + 1;
 // }
+
+// var arr7[11][10];
+
+// var i := 0;
+// while (i < 11)
+// {
+//     var j := 0;
+//     while (j < 10)
+//     {
+//         arr7[i][j] := 10*i+j;
+//         j := j + 1;
+//     }
+//     i := i + 1;
+// }
+
+// log arr7;
+
+// Unique paths leetcode problem
+var m := 3;
+var n := 7;
+var dp[m][n];
+var i:=0 ;
+while(i < m)
+{
+    var j:=0;
+    while(j < n)
+    {
+        if(i = 0 || j = 0)
+        {
+            dp[i][j] := 1;
+        }
+        else
+        {
+            dp[i][j] := dp[i-1][j] + dp[i][j-1];
+        }
+        j := j + 1;
+    }
+    i := i + 1;
+}
+log dp;
+dp[m-1][n-1];
