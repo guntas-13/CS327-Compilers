@@ -1,6 +1,7 @@
 from osl_parser import *
 from pprint import pprint
 from copy import deepcopy
+import time
 
 def e(tree: AST, env: Environment = None) -> int | float | bool:
     if env is None:
@@ -63,14 +64,17 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
                 temparr = newarr
                 ctr += 1
             
-            env.add(f"{arrN.varName}:{arrN.id}", newarr)
+            env.add(f"{arrN.varName}:{arrN.id}", temparr)
             return None
 
         case LetFun(Variable(varName, i), params, body):
             # Closure -> Copy of Environment taken along with the declaration!
+            # funObj = FunObj(params, body, None)
+            # env.add(f"{varName}:{i}", funObj)
+            # funObj.env = env
             funObj = FunObj(params, body, None)
             env.add(f"{varName}:{i}", funObj)
-            funObj.env = env
+            funObj.env = env.copy()
             return None
         
         case CallFun(fn, args):
@@ -79,7 +83,7 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
                 rargs = [e_(arg) for arg in args]
                 
                 # use the environment that was copied when the function was defined
-                call_env = fun.env
+                call_env = fun.env.copy()
                 call_env.enter_scope()
                 for param, arg in zip(fun.params, rargs):
                     call_env.add(f"{param.varName}:{param.id}", arg)
@@ -92,7 +96,7 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
                     rargs = [e_(arg) for arg in args]
                     
                     # use the environment that was copied when the function was defined
-                    call_env = fun.env
+                    call_env = fun.env.copy()
                     call_env.enter_scope()
                     for param, arg in zip(fun.params, rargs):
                         call_env.add(f"{param.varName}:{param.id}", arg)
@@ -115,7 +119,6 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             for i in indices:
                 ptr = ptr.arr[i]
             return ptr
-
         
         case Statements(stmts):
             env.enter_scope()
@@ -129,7 +132,10 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             return res
         
         case WhileStmt(cond, body):
+            # t = time.time()
             while e_(cond):
+                # print(f"Time taken for one cond+body: {time.time() - t:.6f} seconds")
+                # t = time.time()
                 res = e_(body)
                 if res is not None:
                     return res

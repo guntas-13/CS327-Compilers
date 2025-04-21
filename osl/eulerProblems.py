@@ -122,57 +122,60 @@ print(f"Python Time: {Fore.CYAN}{t2:.6f} seconds{Style.RESET_ALL}")
 print(f"osl is {int(t1//t2)}x slower than Python")
 
 # Euler Problem 4: Largest palindrome product
-# exp4 = """
-# def isPal(n, rev, org) {
-#     if (n = 0)
-#     {
-#         if (org = rev) return 1;
-#         return 0;
-#     }
-#     return isPal(n/10, rev*10 + n%10, org);
-# }
-# def F() {
-#     var maxPal := 0;
-#     var i := 999;
-#     while (i >= 100) {
-#         var j := 999;
-#         while (j >= 100) {
-#             var prod := i * j;
-#             if ((prod > maxPal) && (isPal(prod, 0, prod))) {
-#                 maxPal := prod;
-#             }
-#             j := j - 1;
-#         }
-#         i := i - 1;
-#     }
-#     return maxPal;
-# }
-# F();
-# """
-# t1 = run_test(exp4, 906609, "Problem 4")
+exp4 = """
+def isPal(n) {
+    var rev := 0;
+    var nn := n;
+    while (n > 0)
+    {
+        rev := rev * 10 + n % 10;
+        n := n / 10;
+    }
+    return rev=nn;
+}
 
-# def is_palindrome(n):
-#     return str(n) == str(n)[::-1]
+var maxPal := 0;
+var i := 999;
+var j;
+var prod;
+while (i >= 1) {
+    j := i;
+    while (j >= 1) {
+        prod := i * j;
+        if ((prod > maxPal) && (isPal(prod))) {
+            maxPal := prod;
+        }
+        j := j - 1;
+    }
+    i := i - 1;
+}
+maxPal;
+"""
 
-# def F():
-#     max_pal = 0
-#     i = 999
-#     while i >= 100:
-#         j = 999
-#         while j >= 100:
-#             prod = i * j
-#             if prod > max_pal and is_palindrome(prod):
-#                 max_pal = prod
-#             j -= 1
-#         i -= 1
-#     return max_pal
+t1 = run_test(exp4, 906609, "Problem 4")
 
-# start_time = time.time()
-# py_result4 = F(999, 999, 0)
-# t2 = time.time() - start_time
-# print(f"Python Result: {py_result4}")
-# print(f"Python Time: {Fore.CYAN}{t2:.6f} seconds{Style.RESET_ALL}")
-# print(f"osl is {int(t1//t2)}x slower than Python")
+def is_palindrome(n):
+    return str(n) == str(n)[::-1]
+
+def F():
+    max_pal = 0
+    i = 999
+    while i >= 100:
+        j = i
+        while j >= 100:
+            prod = i * j
+            if prod > max_pal and is_palindrome(prod):
+                max_pal = prod
+            j -= 1
+        i -= 1
+    return max_pal
+
+start_time = time.time()
+py_result4 = F()
+t2 = time.time() - start_time
+print(f"Python Result: {py_result4}")
+print(f"Python Time: {Fore.CYAN}{t2:.6f} seconds{Style.RESET_ALL}")
+print(f"osl is {int(t1//t2)}x slower than Python")
 
 
 # Euler Problem 5: Smallest multiple
@@ -243,6 +246,225 @@ def F(n, sum, sumSq):
 
 start_time = time.time()
 py_result6 = F(100, 0, 0)
+t2 = time.time() - start_time
+print(f"Python Result: {py_result6}")
+print(f"Python Time: {Fore.CYAN}{t2:.6f} seconds{Style.RESET_ALL}")
+print(f"osl is {int(t1//t2)}x slower than Python")
+
+# Euler Problem 7: 10001st prime number
+exp7 = """
+def find_nth_prime(n)
+{
+    var limit := 150000;
+    var is_prime[limit + 1];
+    
+    var i := 0;
+    var j;
+    
+    while (i < limit + 1) 
+    {
+        is_prime[i] := 1;
+        i := i + 1;
+    }
+    
+    is_prime[0] := 0;
+    is_prime[1] := 0;
+    
+    i := 2;
+    while (i * i <= limit)
+    {
+        if (is_prime[i])
+        {
+            j := i * i;
+            while (j <= limit)
+            {
+                is_prime[j] := 0;
+                j := j + i;
+            }       
+        }
+        i := i + 1;
+    }
+    
+    var count := 0;
+    var num := 2;
+    while (num <= limit)
+    {
+        if (is_prime[num])
+        {
+            count := count + 1;
+            if (count = n) return num;
+        }
+        num := num + 1;
+    }
+    return -1;   
+}
+
+var n := 10001;
+find_nth_prime(n);
+"""
+
+t1 = run_test(exp7, 104743, "Problem 7")
+
+def find_nth_prime(n):
+    limit = 150000
+    is_prime = [1] * (limit + 1)
+    is_prime[0] = is_prime[1] = 0
+    
+    i = 2
+    while i * i <= limit:
+        if is_prime[i]:
+            j = i * i
+            while j <= limit:
+                is_prime[j] = 0
+                j += i
+        i += 1
+
+    count = 0
+    num = 2
+    while num <= limit:
+        if is_prime[num]:
+            count += 1
+            if count == n:
+                return num
+        num += 1
+    
+    return -1
+
+n = 10001
+
+start_time = time.time()
+py_result6 = find_nth_prime(n)
+t2 = time.time() - start_time
+print(f"Python Result: {py_result6}")
+print(f"Python Time: {Fore.CYAN}{t2:.6f} seconds{Style.RESET_ALL}")
+print(f"osl is {int(t1//t2)}x slower than Python")
+
+# Euler Problem 9: Special Pythagorean triplet
+exp9 = """
+def find_pythagorean_triplet()
+{
+    var a := 1;
+    var denom;
+    var b;
+    var c;
+    while (a < 333)
+    {
+        denom := 1000 - a;
+        if ((500000 % denom) = 0)
+        {
+            b := 1000 - (500000/denom);
+            if (a < b)
+            {
+                c := 1000 - a - b;
+                if ((b < c) && ((a * a) + (b * b) = (c * c)))
+                    return a * b * c;
+            }
+                
+        }
+        a := a + 1;
+    }
+    return -1;
+}
+find_pythagorean_triplet();
+"""
+
+t1 = run_test(exp9, 31875000, "Problem 9")
+
+def find_pythagorean_triplet():
+    a = 1
+    while a < 333:
+        denom = 1000 - a
+        if 500000 % denom == 0:
+            b = 1000 - 500000 // denom
+            if a < b:
+                c = 1000 - a - b
+                if b < c and a * a + b * b == c * c:
+                    return a * b * c
+        a += 1
+    return -1
+
+start_time = time.time()
+py_result6 = find_pythagorean_triplet()
+t2 = time.time() - start_time
+print(f"Python Result: {py_result6}")
+print(f"Python Time: {Fore.CYAN}{t2:.6f} seconds{Style.RESET_ALL}")
+print(f"osl is {int(t1//t2)}x slower than Python")
+
+# Euler Problem 10: Summation of primes
+exp10 = """
+def find_nth_prime()
+{
+    var limit := 2000000;
+    var is_prime[limit];
+    
+    var i := 0;
+    var j;
+    
+    while (i < limit) 
+    {
+        is_prime[i] := 1;
+        i := i + 1;
+    }
+    
+    is_prime[0] := 0;
+    is_prime[1] := 0;
+    
+    i := 2;
+    while (i * i < limit)
+    {
+        if (is_prime[i])
+        {
+            j := i * i;
+            while (j < limit)
+            {
+                is_prime[j] := 0;
+                j := j + i;
+            }       
+        }
+        i := i + 1;
+    }
+    
+    var sum := 0;
+    var num := 2;
+    while (num < limit)
+    {
+        if (is_prime[num]) sum := sum + num;
+        num := num + 1;
+    }
+    return sum;   
+}
+
+find_nth_prime();
+"""
+
+t1 = run_test(exp10, 142913828922, "Problem 10")
+
+def sum_primes_below_n():
+    n = 2000000
+    is_prime = [1] * n
+    is_prime[0] = 0
+    is_prime[1] = 0
+    
+    i = 2
+    while i * i < n:
+        if is_prime[i]:
+            j = i * i
+            while j < n:
+                is_prime[j] = 0
+                j += i
+        i += 1
+    
+    total = 0
+    num = 2
+    while num < n:
+        if is_prime[num]:
+            total += num
+        num += 1
+    
+    return total
+
+start_time = time.time()
+py_result6 = sum_primes_below_n()
 t2 = time.time() - start_time
 print(f"Python Result: {py_result6}")
 print(f"Python Time: {Fore.CYAN}{t2:.6f} seconds{Style.RESET_ALL}")

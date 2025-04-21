@@ -1,20 +1,26 @@
-def sieve_of_eratosthenes(n):
-    is_prime = [True] * (n + 1)
-    is_prime[0] = is_prime[1] = False
+def sum_primes_below_n():
+    n = 2000000
+    is_prime = [1] * n
+    is_prime[0] = 0
+    is_prime[1] = 0
     
-    for i in range(2, int(n ** 0.5) + 1):
+    i = 2
+    while i * i < n:
         if is_prime[i]:
-            for j in range(i * i, n + 1, i):
-                is_prime[j] = False
-                
-    primes = [i for i in range(n + 1) if is_prime[i]]
-    return primes
+            j = i * i
+            while j < n:
+                is_prime[j] = 0
+                j += i
+        i += 1
+    
+    total = 0
+    num = 2
+    while num < n:
+        if is_prime[num]:
+            total += num
+        num += 1
+    
+    return total
 
-def get_nth_prime(n):
-    limit = 200000
-    primes = sieve_of_eratosthenes(limit)
-    return primes[n - 1]
-
-n = 10001
-result = get_nth_prime(n)
-print(f"The {n}th prime number is {result}")
+result = sum_primes_below_n()
+print(result)
