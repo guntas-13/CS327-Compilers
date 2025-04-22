@@ -203,7 +203,6 @@ def do_codegen(tree: AST,  code: bytearray = None): # returns bytearray
                 code.extend(e_(arg))
             code.append(CALL)
             entry_point = fnEntryDict[i]
-            # print(entry_point)
             code.extend(int(entry_point).to_bytes(4, 'little'))
             return code
         

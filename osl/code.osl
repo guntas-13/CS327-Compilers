@@ -383,7 +383,8 @@ def F(a, b)
     log a - b;
     return a % b;
 }
-log F(10, 3);
+var x := 10;
+log F(x, x - 7);
 
 // def fact(n)
 // {
@@ -394,3 +395,4 @@ log F(10, 3);
 //     return n*fact(n-1);
 // }
 // log fact(5);
+
