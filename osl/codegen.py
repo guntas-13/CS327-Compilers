@@ -9,11 +9,14 @@ PUSH_FLOAT  = 0x05
 PUSH_DOUBLE = 0x06
 PUSH_NONE   = 0x07
 PUSH_BOOL   = 0x08
+# PUSH_ID     = 0x09
 
 POP         = 0x10
 DUP         = 0x11
 SWAP        = 0x12
 OVER        = 0x13
+GET         = 0x15
+SET         = 0x16
 
 ADD         = 0x20
 SUB         = 0x21
@@ -52,9 +55,6 @@ NEW_OBJECT  = 0x70
 GET_FIELD   = 0x71
 SET_FIELD   = 0x72
 
-SET = 0x80
-GET  = 0x81
-
 LOG = 0x90
 NEWF = 0x91
 MAKEF = 0x92
@@ -70,7 +70,10 @@ MAKE_ARRAY_DECL = 0x97
 full_code = bytearray()
 
 
-def do_codegen(tree: AST, code: bytearray = None): # returns bytearray
+fnEntryDict = {}
+
+def do_codegen(tree: AST,  code: bytearray = None): # returns bytearray
+    global fnEntryDict
         
     def e_(tree: AST):
         return do_codegen(tree)
@@ -89,6 +92,8 @@ def do_codegen(tree: AST, code: bytearray = None): # returns bytearray
                 code.append(PUSH_INT)
                 code.extend(int(val).to_bytes(8, 'little'))
             elif isinstance(val, float):
+                print(val)
+                print()
                 code.append(PUSH_FLOAT)
                 code.extend(struct.pack('<f', val))
             return code
@@ -96,6 +101,7 @@ def do_codegen(tree: AST, code: bytearray = None): # returns bytearray
         case Character(val):
             code.append(PUSH_CHAR)
             code.extend(val.encode('utf-8'))
+            return code
         
         case Variable(varName, i):
             code.append(GET)
@@ -118,30 +124,40 @@ def do_codegen(tree: AST, code: bytearray = None): # returns bytearray
             return code
         
         case LetFun(Variable(varName, i), params, body):
-            code.append(PUSH_INT)
-            code.extend(int(i).to_bytes(8, 'little'))
-            code.append(MAKEF)
-
-            new_code = bytearray()
-            # add arguments to stack
+            code.append(JUMP)
+            code.extend(int(0).to_bytes(4, 'little'))
+            entry_point = len(code)
+            fnEntryDict[i] = entry_point
             for param in params:
-                new_code.append(PUSH_INT)
-                new_code.extend(int(param.id).to_bytes(8, 'little'))
-            # add number of arguments
-            new_code.append(PUSH_INT)
-            new_code.extend(int(len(params)).to_bytes(8, 'little'))
-            # add function id
-            new_code.append(PUSH_INT)
-            new_code.extend(int(i).to_bytes(8, 'little'))
-            new_code.append(NEWF)
+                code.append(SET)
+                code.extend(int(param.id).to_bytes(8, 'little'))
+            code.extend(e_(body))
+            body_pos = len(code)
+            code[entry_point - 4 : entry_point] = int(body_pos - entry_point).to_bytes(4, 'little')
+            # code.append(PUSH_INT)
+            # code.extend(int(i).to_bytes(8, 'little'))
+            # code.append(MAKEF)
 
-            fbody = do_codegen(body)
+            # new_code = bytearray()
+            # # add arguments to stack
+            # for param in params:
+            #     new_code.append(PUSH_INT)
+            #     new_code.extend(int(param.id).to_bytes(8, 'little'))
+            # # add number of arguments
+            # new_code.append(PUSH_INT)
+            # new_code.extend(int(len(params)).to_bytes(8, 'little'))
+            # # add function id
+            # new_code.append(PUSH_INT)
+            # new_code.extend(int(i).to_bytes(8, 'little'))
+            # new_code.append(NEWF)
 
-            new_code.append(JUMP)
-            new_code.extend(len(fbody).to_bytes(4, 'little'))
-            global full_code
-            new_code.extend(fbody)
-            full_code.extend(new_code)
+            # fbody = do_codegen(body)
+
+            # new_code.append(JUMP)
+            # new_code.extend(len(fbody).to_bytes(4, 'little'))
+            # global full_code
+            # new_code.extend(fbody)
+            # full_code.extend(new_code)
             return code
 
         case Arr(arr, size):
@@ -176,14 +192,18 @@ def do_codegen(tree: AST, code: bytearray = None): # returns bytearray
             return code
         
         case CallFun(Variable(varName, i), args):
-            for arg in args:
-                code.extend(e_(arg))
             
-            code.append(PUSH_INT)
-            code.extend(int(len(args)).to_bytes(8, 'little'))
-            code.append(PUSH_INT)
-            code.extend(int(i).to_bytes(8, 'little'))
+            # code.append(PUSH_INT)
+            # code.extend(int(len(args)).to_bytes(8, 'little'))
+            # code.append(PUSH_INT)
+            # code.extend(int(i).to_bytes(8, 'little'))
+            # code.append(CALL)
+            for arg in args[::-1]:
+                code.extend(e_(arg))
             code.append(CALL)
+            entry_point = fnEntryDict[i]
+            # print(entry_point)
+            code.extend(int(entry_point).to_bytes(4, 'little'))
             return code
         
         case Statements(stmts):
@@ -311,6 +331,7 @@ def do_codegen(tree: AST, code: bytearray = None): # returns bytearray
 
 def codegen(t):
     global full_code
+    global fnEntryDict
     code = do_codegen(t)
     full_code.extend(code)
     full_code.append(HALT)

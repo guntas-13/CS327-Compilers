@@ -134,20 +134,6 @@
 // x := 20;
 // foo(46)(12);
 
-
-// var x := 1;
-// while(x < 10)
-// {
-//     var y := 1;
-//     while(y < 10)
-//     {
-//         log y;
-//         y := y + 1;
-//     }
-//     log x;
-//     x := x + 1;
-// }
-
 // var arr := [1,2+5,3,4,5];
 // arr[0] := 10;
 // log arr[2+2];
@@ -345,9 +331,11 @@
 // arr[1][2][0] := 10;
 // var x := arr[1][0];
 
-// var x := 1;
-// var y := 2;
-// var a[x][x + y];
+// var M := 1;
+// var N := 2;
+// var a[M][M + N];
+// log x;
+// log arr[1][2][0];
 
 // var x := 5;
 // var y := x + 10;
@@ -356,4 +344,53 @@
 // log z;
 // log x < z;
 // log x - y;
-log 1 + 2;
+// log 1.5 + 2;
+// log 'a';
+// log 'a' + 1;
+
+// log x;
+// var x := 5;
+// var y := x - 1.5;   // y = 3.5
+// var z := x + 'g';   // z = 'l'
+// var t := 2;         
+// x := x / t;         // x = 2
+// t := y / t;         // t = 1
+
+// log x % t;          // log 0
+// log x;              // log 2
+// log y;              // log 3.5        
+// log z;              // log 'l'
+
+// var x := 1;
+// var y := 1;
+// while x < 10
+// {
+//     if y = 5
+//     {
+//         log y;
+//     }
+//     else
+//     {
+//         log x + 50;
+//     }
+//     y := y + 1;
+//     log x;
+//     x := x + 1;
+// }
+
+def F(a, b)
+{
+    log a - b;
+    return a % b;
+}
+log F(10, 3);
+
+// def fact(n)
+// {
+//     if(n = 0)
+//     {
+//         return 1;
+//     }
+//     return n*fact(n-1);
+// }
+// log fact(5);
