@@ -29,13 +29,18 @@ def checkInputStr(i:int, s: str) -> Tuple[int, str]:
     while i < len(s):
         char = s[i]
         if char == '"':
-            i += 1
-            return i, string
+            if i + 1 == len(s) or s[i + 1].isspace():
+                i += 1
+                return i, string
+            else:
+                print("x" * 20, "COMPILE TIME ERROR", "x" * 20, "\nInvalid character after string", end="")
+                exit(1)
 
         if char == '\\':
             i += 1
             if i >= len(s):
-                raise ValueError("Unterminated string")
+                print("x" * 20, "COMPILE TIME ERROR", "x" * 20, "\nUnterminated string", end="")
+                exit(1)
             escape_char = s[i]
             if escape_char == '"':
                 string += '"'
@@ -47,12 +52,14 @@ def checkInputStr(i:int, s: str) -> Tuple[int, str]:
             elif escape_char == 't':
                 string += '\t'
             else:
-                raise ValueError(f"Invalid escape character at index {i}: \\{escape_char}")
+                print("x" * 20, "COMPILE TIME ERROR", "x" * 20, f"\nInvalid escape character at index {i}: \\{escape_char}")
+                exit(1)
         else:
             string += char
         i += 1
     else:
-        raise ValueError("Unterminated string")
+        print("x" * 20, "COMPILE TIME ERROR", "x" * 20, "\nUnterminated string", end="")
+        exit(1)
 
 def checkInputNum(i:int, s: str) -> Tuple[int, str]:
     start = i
@@ -80,14 +87,19 @@ def lex(s: str) -> List[Token]:
         # symbols are like words but start with a single quote '
         elif char == "'":
             if i >= len(s):
-                raise ValueError("Unterminated symbol")
+                print("x" * 20, "COMPILE TIME ERROR", "x" * 20, "\nUnterminated symbol", end="")
+                exit(1)
             start = i
             i += 1
-            while i < len(s) and (s[i].isalnum() or s[i] == '_' or s[i] == '-'):
-                i += 1
+            while i < len(s):
+                if (s[i].isalnum() or s[i] == '_' or s[i] == '-'):
+                    i += 1
+                elif s[i].isspace():
+                    break
+                else:
+                    print("x" * 20, "COMPILE TIME ERROR", "x" * 20, f"\nInvalid symbol character '{s[i]}' at position {i}")
+                    exit(1)
             word = s[start:i]
-            if not word or not word[1].isalpha():
-                raise ValueError(f"Invalid symbol '{word}' at position {start}")
             tokens.append(SymbolToken(word))
         
         elif char.isdigit() or (char == '-' and i + 1 < len(s) and s[i + 1].isdigit()):
@@ -99,17 +111,20 @@ def lex(s: str) -> List[Token]:
             while i < len(s) and not s[i].isspace() and s[i] != '"':
                 i += 1
             word = s[start:i]
-            if any(c.isdigit() for c in word) and not word.isdigit():
-                raise ValueError(f"Invalid word '{word}' at position {start}")
+            
+            if word in {"true", "false"}:
+                tokens.append(BooleanToken(word))
+            elif word in {"and", "or", "not", "xor", "b=", "b!=", "s=", "s!=", "lex>", "lex<", "lex<=", "lex>=", "sym="}:
+                tokens.append(OperatorToken(word))
             else:
-                if word in {"true", "false"}:
-                    tokens.append(BooleanToken(word))
-                elif word in {"and", "or", "not", "xor", "b=", "b!=", "s=", "s!=", "lex>", "lex<", "lex<=", "lex>=", "sym="}:
-                    tokens.append(OperatorToken(word))
+                if word[0].isdigit():
+                    print("x" * 20, "COMPILE TIME ERROR", "x" * 20, f"\nInvalid word '{word}' at position {start}")
+                    exit(1)
                 else:
                     tokens.append(WordToken(word))
 
         else:
-            raise ValueError(f"Unexpected character '{s[i]}' at position {i}")
+            print("x" * 20, "COMPILE TIME ERROR", "x" * 20, f"\nUnexpected character '{s[i]}' at position {i}")
+            exit(1)
     
     return tokens

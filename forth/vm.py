@@ -468,7 +468,6 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     for item in l:
                         stack.push(item)
                         eval(procedure.val, env, stack)
-                        stack.pop()
                 
                 elif val == "is-number?":
                     n = stack.pop()
