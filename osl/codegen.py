@@ -90,6 +90,7 @@ def do_codegen(tree: AST,  code: bytearray = None): # returns bytearray
         case Number(val):
             if isinstance(val, int):
                 code.append(PUSH_INT)
+                # print(val)
                 code.extend(int(val).to_bytes(8, 'little'))
             elif isinstance(val, float):
                 print(val)
