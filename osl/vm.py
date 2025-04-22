@@ -11,7 +11,7 @@ class Integer(Value):
     val: int
 
 class Environment:
-    envs: List[Dict[int, Value]]
+    envs: List
     
     def __init__(self):
         self.envs = [{}]
@@ -60,35 +60,73 @@ class CallFrame:
 @dataclass
 class Code:
     bytecode: bytearray
-    # env: Environment   
 
 class Opcode:
+    PUSH_CHAR   = 0x01
+    PUSH_SHORT  = 0x02
     PUSH_INT    = 0x03
+    PUSH_LONG   = 0x04
+    PUSH_FLOAT  = 0x05
+    PUSH_DOUBLE = 0x06
     PUSH_NONE   = 0x07
+    PUSH_BOOL   = 0x08
+
     POP         = 0x10
     DUP         = 0x11
+    SWAP        = 0x12
+    OVER        = 0x13
+
     ADD         = 0x20
     SUB         = 0x21
     MUL         = 0x22
     DIV         = 0x23
     MOD         = 0x24
     NEG         = 0x25
+
+    BITWISE_NOT = 0x30
+    BITWISE_AND = 0x31
+    BITWISE_OR  = 0x32
+    BITWISE_XOR = 0x33
+
     EQ          = 0x40
+    NEQ         = 0x41
     LT          = 0x42
     GT          = 0x43
-    JUMP        = 0x50
+    LE          = 0x44
+    GE          = 0x45
+
+    JUMP            = 0x50
     JUMP_IF_ZERO    = 0x51
     JUMP_IF_NONZERO = 0x52
-    CALL        = 0x53
-    RETURN      = 0x54
-    HALT        = 0x55
-    STORE       = 0x80
-    LOAD        = 0x81
-    ENTER_SCOPE = 0x82
-    EXIT_SCOPE  = 0x83
-    LOG         = 0x90
-    NEWF        = 0x91
-    MAKEF       = 0x92
+    CALL            = 0x53
+    RETURN          = 0x54
+    HALT            = 0x55
+
+    I2F         = 0x60
+    F2I         = 0x61
+    I2D         = 0x62
+    D2I         = 0x63
+    F2D         = 0x64
+    D2F         = 0x65
+
+    NEW_OBJECT  = 0x70
+    GET_FIELD   = 0x71
+    SET_FIELD   = 0x72
+
+    SET = 0x80
+    GET  = 0x81
+
+    LOG = 0x90
+    NEWF = 0x91
+    MAKEF = 0x92
+
+    MAKE_ARRAY = 0x93
+    ARRACC = 0x94
+
+    STORE = 0x95
+    LOAD  = 0x96
+
+    MAKE_ARRAY_DECL = 0x97
     
 class StackVM:
     def __init__(self, code: Code):
@@ -126,12 +164,30 @@ class StackVM:
                 break
             
             elif op == Opcode.PUSH_INT:
-                if self.pc + 4 > len(self.code.bytecode):
+                if self.pc + 8 > len(self.code.bytecode):
                     raise RuntimeError("Invalid PUSH_INT instruction")
-                val = struct.unpack('<i', self.code.bytecode[self.pc + 1:self.pc + 5])[0] # < denotes little-endian, i denotes int
+                val = struct.unpack('<q', self.code.bytecode[self.pc + 1:self.pc + 9])[0] # < denotes little-endian, i denotes int
                 self.push(Integer(val))
-                self.pc += 5
+                self.pc += 9
                 
+            elif op == Opcode.BITWISE_AND:
+                right = self.pop()
+                left = self.pop()
+                if isinstance(left, Integer) and isinstance(right, Integer):
+                    self.push(Integer(int(left.val and right.val)))
+                else:
+                    raise TypeError("Invalid types for BITWISE_AND")
+                self.pc += 1
+            
+            elif op == Opcode.BITWISE_OR:
+                right = self.pop()
+                left = self.pop()
+                if isinstance(left, Integer) and isinstance(right, Integer):
+                    self.push(Integer(int(left.val or right.val)))
+                else:
+                    raise TypeError("Invalid types for BITWISE_OR")
+                self.pc += 1
+            
             elif op == Opcode.POP:
                 self.pop()
                 self.pc += 1
@@ -229,51 +285,51 @@ class StackVM:
                 self.pc += 1
             
             elif op == Opcode.JUMP:
-                if self.pc + 2 > len(self.code.bytecode):
+                if self.pc + 4 > len(self.code.bytecode):
                     raise RuntimeError("Invalid JUMP instruction")
-                offset = struct.unpack('<h', self.code.bytecode[self.pc + 1:self.pc + 3])[0]
-                self.pc += 3 + offset
+                offset = struct.unpack('<i', self.code.bytecode[self.pc + 1:self.pc + 5])[0]
+                self.pc += 5 + offset
             
             elif op == Opcode.JUMP_IF_ZERO:
-                if self.pc + 2 > len(self.code.bytecode):
+                if self.pc + 4 > len(self.code.bytecode):
                     raise RuntimeError("Invalid JUMP_IF_ZERO instruction")
-                offset = struct.unpack('<h', self.code.bytecode[self.pc + 1:self.pc + 3])[0]
+                offset = struct.unpack('<i', self.code.bytecode[self.pc + 1:self.pc + 5])[0]
                 cond = self.pop()
                 if not isinstance(cond, Integer):
                     raise TypeError("Invalid type for JUMP_IF_ZERO")
                 
-                self.pc += 3 + (offset if cond.val == 0 else 0)
+                self.pc += 5 + (offset if cond.val == 0 else 0)
                 
             elif op == Opcode.JUMP_IF_NONZERO:
-                if self.pc + 2 > len(self.code.bytecode):
+                if self.pc + 4 > len(self.code.bytecode):
                     raise RuntimeError("Invalid JUMP_IF_NONZERO instruction")
-                offset = struct.unpack('<h', self.code.bytecode[self.pc + 1:self.pc + 3])[0]
+                offset = struct.unpack('<i', self.code.bytecode[self.pc + 1:self.pc + 5])[0]
                 cond = self.pop()
                 if not isinstance(cond, Integer):
                     raise TypeError("Invalid type for JUMP_IF_NONZERO")
                 
-                self.pc += 3 + (offset if cond.val != 0 else 0)
+                self.pc += 5 + (offset if cond.val != 0 else 0)
                 
-            elif op == Opcode.STORE:
-                if self.pc + 4 > len(self.code.bytecode):
-                    raise RuntimeError("Invalid STORE instruction")
+            elif op == Opcode.SET:
+                if self.pc + 8 > len(self.code.bytecode):
+                    raise RuntimeError("Invalid SET instruction")
                 
-                id = struct.unpack('<i', self.code.bytecode[self.pc + 1:self.pc + 5])[0]
+                id = struct.unpack('<q', self.code.bytecode[self.pc + 1:self.pc + 9])[0]
                 val = self.pop()
                 try:
                     self.current_env().update(id, val)
                 except ValueError:
                     self.current_env().add(id, val)
-                self.pc += 5
+                self.pc += 9
                 
-            elif op == Opcode.LOAD:
-                if self.pc + 4 > len(self.code.bytecode):
-                    raise RuntimeError("Invalid LOAD instruction")
+            elif op == Opcode.GET:
+                if self.pc + 8 > len(self.code.bytecode):
+                    raise RuntimeError("Invalid GET instruction")
                 
-                id = struct.unpack('<i', self.code.bytecode[self.pc + 1:self.pc + 5])[0]
+                id = struct.unpack('<q', self.code.bytecode[self.pc + 1:self.pc + 9])[0]
                 val = self.current_env().get(id)
                 self.push(val)
-                self.pc += 5
+                self.pc += 9
 
             
             elif op == Opcode.CALL:
@@ -334,7 +390,7 @@ class StackVM:
                 for _ in range(num_args):
                     args_ids.append(self.pop().val)
 
-                newFunObj = FunObj(self.pc+4, args_ids, None)
+                newFunObj = FunObj(self.pc+6, args_ids, None)
                 self.current_env().add(fun_id, newFunObj)
                 self.pc += 1
 
@@ -343,7 +399,7 @@ class StackVM:
                 funObject = self.current_env().get(fun_id)
                 
                 self.current_env().add(fun_id, funObject)
-                funObject.env = self.current_env().copy()
+                funObject.env = self.current_env()
                 self.pc += 1
                 
             else:

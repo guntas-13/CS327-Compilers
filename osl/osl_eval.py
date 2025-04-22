@@ -74,7 +74,7 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             # funObj.env = env
             funObj = FunObj(params, body, None)
             env.add(f"{varName}:{i}", funObj)
-            funObj.env = env.copy()
+            funObj.env = env
             return None
         
         case CallFun(fn, args):

@@ -345,6 +345,15 @@
 // arr[1][2][0] := 10;
 // var x := arr[1][0];
 
-var x := 1;
-var y := 2;
-var a[x][x + y];
+// var x := 1;
+// var y := 2;
+// var a[x][x + y];
+
+// var x := 5;
+// var y := x + 10;
+// var z := y + x;
+// var t := 'G';
+// log z;
+// log x < z;
+// log x - y;
+log 1 + 2;

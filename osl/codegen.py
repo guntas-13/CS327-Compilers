@@ -1,4 +1,5 @@
 from osl_parser import *
+import struct
 
 PUSH_CHAR   = 0x01
 PUSH_SHORT  = 0x02
@@ -84,8 +85,12 @@ def do_codegen(tree: AST, code: bytearray = None): # returns bytearray
             return code
         
         case Number(val):
-            code.append(PUSH_INT)
-            code.extend(int(val).to_bytes(8, 'little'))
+            if isinstance(val, int):
+                code.append(PUSH_INT)
+                code.extend(int(val).to_bytes(8, 'little'))
+            elif isinstance(val, float):
+                code.append(PUSH_FLOAT)
+                code.extend(struct.pack('<f', val))
             return code
         
         case Character(val):

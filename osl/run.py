@@ -20,7 +20,7 @@ rcode = resolve(parsed)
 pprint(rcode)
 # print()
 # print(e(rcode))
-# print(codegen(rcode))
+print(codegen(rcode))
 bb = bytearray(codegen(rcode))
 # print(bb)
 with open("bytecode.bin", "wb") as bytecode_file:
