@@ -51,12 +51,20 @@ NEW_OBJECT  = 0x70
 GET_FIELD   = 0x71
 SET_FIELD   = 0x72
 
-STORE = 0x80
-LOAD  = 0x81
+SET = 0x80
+GET  = 0x81
 
 LOG = 0x90
 NEWF = 0x91
 MAKEF = 0x92
+
+MAKE_ARRAY = 0x93
+ARRACC = 0x94
+
+STORE = 0x95
+LOAD  = 0x96
+
+MAKE_ARRAY_DECL = 0x97
 
 full_code = bytearray()
 
@@ -77,15 +85,16 @@ def do_codegen(tree: AST, code: bytearray = None): # returns bytearray
         
         case Number(val):
             code.append(PUSH_INT)
-            code.extend(int(val).to_bytes(4, 'little'))
+            code.extend(int(val).to_bytes(8, 'little'))
             return code
-            
-        case StringLiteral(val):
-            return val
+        
+        case Character(val):
+            code.append(PUSH_CHAR)
+            code.extend(val.encode('utf-8'))
         
         case Variable(varName, i):
-            code.append(LOAD)
-            code.extend(int(i).to_bytes(4, 'little'))
+            code.append(GET)
+            code.extend(int(i).to_bytes(8, 'little'))
             return code
         
         case Let(Variable(varName, i), e1):
@@ -93,41 +102,72 @@ def do_codegen(tree: AST, code: bytearray = None): # returns bytearray
                 code.extend(e_(e1))
             else:
                 code.append(PUSH_NONE)
-            code.append(STORE)
-            code.extend(int(i).to_bytes(4, 'little'))
+            code.append(SET)
+            code.extend(int(i).to_bytes(8, 'little'))
             return code
         
         case Assign(Variable(varName, i), e1):
             code.extend(e_(e1))
-            code.append(STORE)
-            code.extend(int(i).to_bytes(4, 'little'))
+            code.append(SET)
+            code.extend(int(i).to_bytes(8, 'little'))
             return code
         
         case LetFun(Variable(varName, i), params, body):
             code.append(PUSH_INT)
-            code.extend(int(i).to_bytes(4, 'little'))
+            code.extend(int(i).to_bytes(8, 'little'))
             code.append(MAKEF)
 
             new_code = bytearray()
             # add arguments to stack
             for param in params:
                 new_code.append(PUSH_INT)
-                new_code.extend(int(param.id).to_bytes(4, 'little'))
+                new_code.extend(int(param.id).to_bytes(8, 'little'))
             # add number of arguments
             new_code.append(PUSH_INT)
-            new_code.extend(int(len(params)).to_bytes(4, 'little'))
+            new_code.extend(int(len(params)).to_bytes(8, 'little'))
             # add function id
             new_code.append(PUSH_INT)
-            new_code.extend(int(i).to_bytes(4, 'little'))
+            new_code.extend(int(i).to_bytes(8, 'little'))
             new_code.append(NEWF)
 
             fbody = do_codegen(body)
 
             new_code.append(JUMP)
-            new_code.extend(len(fbody).to_bytes(2, 'little'))
+            new_code.extend(len(fbody).to_bytes(4, 'little'))
             global full_code
             new_code.extend(fbody)
             full_code.extend(new_code)
+            return code
+
+        case Arr(arr, size):
+            for a in arr[::-1]:
+                code.extend(e_(a))
+            code.append(MAKE_ARRAY)
+            code.extend(int(size).to_bytes(2, 'little'))
+            return code
+            
+        case ArrAccess(arr, index):
+            code.extend(e_(index))
+            code.extend(e_(arr))
+            code.append(ARRACC)
+            return code
+        
+        case AssignArr(arr, e1):
+            code.extend(e_(e1))
+            code.extend(e_(arr))
+            code.append(STORE)
+            return code
+        
+        case ArrDecl(arr):
+            indices = []
+            while isinstance(arr, ArrAccess):
+                indices.append(arr.index)
+                arr = arr.arr
+            indices = indices[::-1]
+            for i in indices:
+                code.extend(e_(i))
+            code.append(MAKE_ARRAY_DECL)
+            code.extend(int(len(indices)).to_bytes(2, 'little'))
             return code
         
         case CallFun(Variable(varName, i), args):
@@ -135,9 +175,9 @@ def do_codegen(tree: AST, code: bytearray = None): # returns bytearray
                 code.extend(e_(arg))
             
             code.append(PUSH_INT)
-            code.extend(int(len(args)).to_bytes(4, 'little'))
+            code.extend(int(len(args)).to_bytes(8, 'little'))
             code.append(PUSH_INT)
-            code.extend(int(i).to_bytes(4, 'little'))
+            code.extend(int(i).to_bytes(8, 'little'))
             code.append(CALL)
             return code
         
@@ -230,24 +270,38 @@ def do_codegen(tree: AST, code: bytearray = None): # returns bytearray
         case If(condition, then_body, else_body): 
             code.extend(e_(condition))
             code.append(JUMP_IF_ZERO)
-            code.extend(int(0).to_bytes(2, 'little'))
-            jif_pos = len(code)-2
+            code.extend(int(0).to_bytes(4, 'little'))
+            jif_pos = len(code)-4
             code.extend(e_(then_body))
             code.append(JUMP)
-            code.extend(int(0).to_bytes(2, 'little'))
-            j_pos = len(code)-2
-            code[jif_pos:jif_pos+2] = int(len(code)-jif_pos-2).to_bytes(2, 'little')
+            code.extend(int(0).to_bytes(4, 'little'))
+            j_pos = len(code)-4
+            code[jif_pos:jif_pos+4] = int(len(code)-jif_pos-4).to_bytes(4, 'little')
             code.extend(e_(else_body))
-            code[j_pos:j_pos+2] = int(len(code)-j_pos-2).to_bytes(2, 'little')
+            code[j_pos:j_pos+4] = int(len(code)-j_pos-4).to_bytes(4, 'little')
+            return code
+        
+        case WhileStmt(condition, body):
+            cond_start = len(code)
+            code.extend(e_(condition))
+            code.append(JUMP_IF_ZERO)
+            code.extend(int(0).to_bytes(4, 'little'))
+            jif_pos = len(code)-4
+            code.extend(e_(body))
+            code.append(JUMP)
+            code.extend(int(0).to_bytes(4, 'little'))
+            j_pos = len(code)-4
+            code[jif_pos:jif_pos+4] = int(j_pos - jif_pos).to_bytes(4, 'little')
+            code[j_pos:j_pos+4] = int(cond_start - len(code)).to_bytes(4, 'little', signed=True)
             return code
             
         case IfUnM(condition, then_body):
             code.extend(e_(condition))
             code.append(JUMP_IF_ZERO)
-            code.extend(int(0).to_bytes(2, 'little'))
-            jif_pos = len(code)-2
+            code.extend(int(0).to_bytes(4, 'little'))
+            jif_pos = len(code)-4
             code.extend(e_(then_body))
-            code[jif_pos:jif_pos+2] = int(len(code)-jif_pos-2).to_bytes(2, 'little')
+            code[jif_pos:jif_pos+4] = int(len(code)-jif_pos-4).to_bytes(4, 'little')
             return code
 
 def codegen(t):
