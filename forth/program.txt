@@ -1,2 +1,7 @@
-argv len 1 > { argv 1 nth } { "y" } if
-{ dup print } forever
+{
+  dup 1 <=
+  { pop 1 } 
+  { dup dec fib rot dec dec fib + } 
+  if 
+} 'fib def
+10 fib put
