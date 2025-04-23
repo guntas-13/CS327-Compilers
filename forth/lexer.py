@@ -33,14 +33,12 @@ def checkInputStr(i:int, s: str) -> Tuple[int, str]:
                 i += 1
                 return i, string
             else:
-                print("x" * 20, "COMPILE TIME ERROR", "x" * 20, "\nInvalid character after string", end="")
-                exit(1)
+                raise ValueError("Invalid character after string")
 
         if char == '\\':
             i += 1
             if i >= len(s):
-                print("x" * 20, "COMPILE TIME ERROR", "x" * 20, "\nUnterminated string", end="")
-                exit(1)
+                raise ValueError("Unterminated string")
             escape_char = s[i]
             if escape_char == '"':
                 string += '"'
@@ -52,14 +50,13 @@ def checkInputStr(i:int, s: str) -> Tuple[int, str]:
             elif escape_char == 't':
                 string += '\t'
             else:
-                print("x" * 20, "COMPILE TIME ERROR", "x" * 20, f"\nInvalid escape character at index {i}: \\{escape_char}")
-                exit(1)
+                raise ValueError(f"Invalid escape character: \\{escape_char}")
+
         else:
             string += char
         i += 1
     else:
-        print("x" * 20, "COMPILE TIME ERROR", "x" * 20, "\nUnterminated string", end="")
-        exit(1)
+        raise ValueError("Unterminated string")
 
 def checkInputNum(i:int, s: str) -> Tuple[int, str]:
     start = i
@@ -87,8 +84,7 @@ def lex(s: str) -> List[Token]:
         # symbols are like words but start with a single quote '
         elif char == "'":
             if i >= len(s):
-                print("x" * 20, "COMPILE TIME ERROR", "x" * 20, "\nUnterminated symbol", end="")
-                exit(1)
+                raise ValueError("Unterminated symbol")
             start = i
             i += 1
             while i < len(s):
@@ -97,8 +93,7 @@ def lex(s: str) -> List[Token]:
                 elif s[i].isspace():
                     break
                 else:
-                    print("x" * 20, "COMPILE TIME ERROR", "x" * 20, f"\nInvalid symbol character '{s[i]}' at position {i}")
-                    exit(1)
+                    raise ValueError(f"Invalid character in symbol: {s[i]}")
             word = s[start:i]
             tokens.append(SymbolToken(word))
         
@@ -118,13 +113,11 @@ def lex(s: str) -> List[Token]:
                 tokens.append(OperatorToken(word))
             else:
                 if word[0].isdigit():
-                    print("x" * 20, "COMPILE TIME ERROR", "x" * 20, f"\nInvalid word '{word}' at position {start}")
-                    exit(1)
+                    raise ValueError(f"Invalid word '{word}' at position {start}")
                 else:
                     tokens.append(WordToken(word))
 
         else:
-            print("x" * 20, "COMPILE TIME ERROR", "x" * 20, f"\nUnexpected character '{s[i]}' at position {i}")
-            exit(1)
+            raise ValueError(f"Unexpected character '{char}' at position {i}")
     
     return tokens
