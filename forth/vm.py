@@ -261,6 +261,18 @@ def eval(objs: List, env: Dict = None, stack: Stack = None) -> None:
                     else:
                         print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nEquality requires numbers",end="")
                         exit(1)
+                
+                elif val == "!=":
+                    b = stack.pop()
+                    a = stack.pop()
+                    if isinstance(a, NumberObj) and isinstance(b, NumberObj):
+                        if a.val != b.val:
+                            stack.push(BooleanObj("true"))
+                        else:
+                            stack.push(BooleanObj("false"))
+                    else:
+                        print("x" * 20, "RUNTIME ERROR", "x" * 20, "\nInequality requires numbers",end="")
+                        exit(1)
                     
                 elif val == "get":
                     s = input()
