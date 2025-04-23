@@ -100,6 +100,9 @@ def lex(s: str) -> List[Token]:
                     print("x" * 20, "COMPILE TIME ERROR", "x" * 20, f"\nInvalid symbol character '{s[i]}' at position {i}")
                     exit(1)
             word = s[start:i]
+            if not word or not word[1].isalpha() or not word[1] != '_':
+                print("x" * 20, "COMPILE TIME ERROR", "x" * 20, f"\nInvalid symbol '{word}' at position {start}")
+                exit(1)
             tokens.append(SymbolToken(word))
         
         elif char.isdigit() or (char == '-' and i + 1 < len(s) and s[i + 1].isdigit()):
