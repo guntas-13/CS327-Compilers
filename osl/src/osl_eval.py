@@ -164,13 +164,13 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
         case BinOp("<=", left, right): return e_(left) <= e_(right)
         case BinOp(">=", left, right): return e_(left) >= e_(right)
         case BinOp("=", left, right): return e_(left) == e_(right)
-        case BinOp("!=", left, right): return e_(left) != e_(right)
+        case BinOp("~=", left, right): return e_(left) != e_(right)
         case BinOp("%", left, right): return e_(left) % e_(right)
         case BinOp("||", left, right): return e_(left) or e_(right)
         case BinOp("&&", left, right): return e_(left) and e_(right)
         
         case UnOp("-", right): return -e_(right)
-        case UnOp("\u221a", right): return e_(right) ** 0.5
+        case UnOp("~", right): return not e_(right)
         
         case If(condition, then_body, else_body): 
             if e_(condition):

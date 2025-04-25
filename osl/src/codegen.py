@@ -30,6 +30,10 @@ BITWISE_AND = 0x31
 BITWISE_OR  = 0x32
 BITWISE_XOR = 0x33
 
+AND         = 0x34
+OR          = 0x35
+NOT         = 0x36
+
 EQ          = 0x40
 NEQ         = 0x41
 LT          = 0x42
@@ -199,8 +203,8 @@ def do_codegen(tree: AST):  # returns bytearray
             e_(right)
             op_map = {
                 "+": ADD, "-": SUB, "*": MUL, "/": DIV, "%": MOD,
-                "<": LT, ">": GT, "<=": LE, ">=": GE, "=": EQ, "!=": NEQ,
-                "||": BITWISE_OR, "&&": BITWISE_AND
+                "<": LT, ">": GT, "<=": LE, ">=": GE, "=": EQ, "~=": NEQ,
+                "||": OR, "&&": AND, "~": NOT
             }
             full_code.append(op_map[op])
             return

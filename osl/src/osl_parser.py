@@ -164,7 +164,7 @@ def parse(s: str) -> AST:
     def parse_comparison():
         ast = parse_add()
         match peek():
-            case OperatorToken(op) if op in {"<", ">", "<=", ">=", "=", "!="}:
+            case OperatorToken(op) if op in {"<", ">", "<=", ">=", "=", "~="}:
                 consume()
                 return BinOp(op, ast, parse_add())
             case _:

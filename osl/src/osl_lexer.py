@@ -97,11 +97,11 @@ def lex(s: str) -> Iterator[Token]:
             yield prev_token
 
         else:
-            if s[i:i+2] in {"<=", ">=", "!=", "||", "&&", ":="}:
+            if s[i:i+2] in {"<=", ">=", "~=", "||", "&&", ":="}:
                 prev_token = OperatorToken(s[i:i+2])
                 yield prev_token
                 i += 2
-            elif s[i] in {'+', '*', '/', '^', '-', '(', ')', '<', '>', '=', '%', '\u221a', ",", "{", "}", ";", '[', ']', '~'}:
+            elif s[i] in {'+', '*', '/', '^', '-', '(', ')', '<', '>', '=', '%', ",", "{", "}", ";", '[', ']', '~'}:
                 prev_token = OperatorToken(s[i])
                 yield prev_token
                 i += 1

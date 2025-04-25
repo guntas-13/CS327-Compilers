@@ -75,11 +75,16 @@ typedef enum {
     MOD             = 0x24,
     NEG             = 0x25,
 
-    // Bitwise / Logical operations
+    // Bitwise operations
     BITWISE_NOT     = 0x30,
     BITWISE_AND     = 0x31,
     BITWISE_OR      = 0x32,
     BITWISE_XOR     = 0x33,
+
+    // Logical operations
+    AND             = 0x34,
+    OR              = 0x35,
+    NOT             = 0x36,
 
     // Comparisons
     EQ              = 0x40,
@@ -653,6 +658,37 @@ int execute(uint8_t *code, size_t codeSize) {
                     Value result; result.type = VAL_INT; result.i = a.i ^ b.i;
                     PUSH(result);
                 } else { fprintf(stderr, "BITWISE_XOR supports only INT values.\n"); exit(1); }
+                pc += 1;
+                break;
+            }
+            
+            // Logical Operations
+            case AND: {
+                Value b = POP();
+                Value a = POP();
+                Value result; result.type = VAL_INT;
+                result.v = malloc(sizeof(int64_t));
+                *(int64_t*)result.v = (*(int64_t*)a.v && *(int64_t*)b.v) ? 1 : 0;
+                PUSH(result);
+                pc += 1;
+                break;
+            }
+            case OR: {
+                Value b = POP();
+                Value a = POP();
+                Value result; result.type = VAL_INT;
+                result.v = malloc(sizeof(int64_t));
+                *(int64_t*)result.v = (*(int64_t*)a.v || *(int64_t*)b.v) ? 1 : 0;
+                PUSH(result);
+                pc += 1;
+                break;
+            }
+            case NOT: {
+                Value a = POP();
+                Value result; result.type = VAL_INT;
+                result.v = malloc(sizeof(int64_t));
+                *(int64_t*)result.v = (*(int64_t*)a.v == 0) ? 1 : 0;
+                PUSH(result);
                 pc += 1;
                 break;
             }
