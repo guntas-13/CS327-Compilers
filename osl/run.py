@@ -47,6 +47,7 @@ def main():
     elif args.run:
         parsed = parse(code)
         rcode = resolve(parsed)
+        pprint(rcode)
         start_time = time.time()
         result = e(rcode)
         end_time = time.time()

@@ -327,15 +327,29 @@
 // find_nth_prime();
 
 
-// var arr := [1, [2, 3, [4, 5]], 6, 7];
-// arr[1][2][0] := 10;
-// var x := arr[1][0];
+var arr := [1, [2, 3, [4, 5]], 6, 7];
+var x := arr[1][0] + arr[1][2][1];
+arr[1][2][x - 7] := 10;
+log arr[1][2][0];
 
-// var M := 1;
-// var N := 2;
-// var a[M][M + N];
-// log x;
-// log arr[1][2][0];
+var M := 1;
+var N := 2;
+var a[M][M + N];
+var i := 0;
+var j := 0;
+while (i < M)
+{
+    j := 0;
+    while (j < M + N)
+    {
+        a[i][j] := i + j;
+        log a[i][j];
+        j := j + 1;
+    }
+    i := i + 1;
+}
+log x;
+log a[M - 1][N - 1];
 
 // var x := 5;
 // var y := x + 10;
@@ -396,16 +410,16 @@
 // }
 // log fact(15);
 
-def fib(n)
-{
-    if (n <= 1)
-    {
-        return n;
-    }
-    return fib(n - 1) + fib(n - 2);
-}
+// def fib(n)
+// {
+//     if (n <= 1)
+//     {
+//         return n;
+//     }
+//     return fib(n - 1) + fib(n - 2);
+// }
 
-log fib(35);
+// log fib(35);
 
 // var x := 5;
 // def F(a)

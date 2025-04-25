@@ -417,6 +417,7 @@ int execute(uint8_t *code, size_t codeSize) {
 
                 ValueType t = vv.type;
                 void* val = vv.v;
+                // if (vv.type == VAL_ARR) {printf("get array\n");}
                 // if(vv.type == VAL_INT){
                 //     printf("set val: %lld\n",*(int64_t*)val);
                 // }else if(vv.type == VAL_FLOAT){
@@ -937,22 +938,22 @@ int execute(uint8_t *code, size_t codeSize) {
                 Value v;
                 DLOG("%d\n", nElems)
                 v.type = VAL_ARR;
-                v.v = malloc(nElems*sizeof(Value*));
+                v.v = malloc(nElems * sizeof(Value)); // fixed! sizeof(Value) not sizeof(Value*)
                 DLOG("atleast here\n")
-                for(int i = 0; i < nElems; i++) {
+                for (int i = 0; i < nElems; i++) {
                     ((Value*)(v.v))[i] = POP();
                     DLOG("pushed an element to array\n")
                 }
                 DLOG("pushed everything to array object\n")
                 PUSH(v);
-                DLOG("pushed the array object to stack\n")
+                if (v.type == VAL_ARR) { DLOG("pushed the array object to stack\n")}
                 pc += 3;
                 break;
             }
             case ARR_ACC: {
                 DLOG("reached at array access\n")
                 Value arr = POP(), ind = POP();
-                if(ind.type != VAL_ARR) { fprintf(stderr, "Unexpected type for array"); exit(1);}
+                if(arr.type != VAL_ARR) { fprintf(stderr, "Unexpected type for array"); exit(1);}
                 if(ind.type != VAL_INT) { fprintf(stderr, "Unexpected type for index"); exit(1);}
                 uint64_t idx = *((uint64_t*)ind.v);
                 PUSH(((Value*)(arr.v))[idx]);
@@ -965,15 +966,48 @@ int execute(uint8_t *code, size_t codeSize) {
                 uint16_t nDims = code[pc+1] | (code[pc+2]<<8);
                 Value v;
                 v.type = VAL_ARR;
-                for(int i = 0; i < nDims; i++) {
-                    Value nd = POP();
-                    if(nd.type != VAL_INT) { fprintf(stderr, "Unexpected type for index"); exit(1);}
-                    v.v = malloc((*(int64_t*)(nd.v))*sizeof(v));
-                    for(int j = 0; j<(*(int64_t*)(nd.v)); j++) {
-                        ((Value*)v.v)[j].type = VAL_ARR;
+                
+                // for(int i = 0; i < nDims; i++) {
+                //     Value nd = POP();
+                //     if(nd.type != VAL_INT) { fprintf(stderr, "Unexpected type for index"); exit(1);}
+                //     v.v = malloc((*(int64_t*)(nd.v)) *sizeof(Value));
+                //     for(int j = 0; j<(*(int64_t*)(nd.v)); j++) {
+                //         ((Value*)v.v)[j].type = VAL_ARR;
+                //     }
+                // }
+                
+                int64_t sizes[nDims];
+                for (int d = 0; d < nDims; d++) {
+                    Value dim = POP();
+                    if (dim.type != VAL_INT) {
+                        fprintf(stderr, "Unexpected type for dimension size\n");
+                        exit(1);
                     }
+                    sizes[d] = *(int64_t*)(dim.v);
                 }
-                PUSH(v);
+
+                Value vv; // innermost array
+                vv.type = VAL_ARR;
+                vv.v = malloc(sizes[0] * sizeof(Value));
+                for (int i = 0; i < sizes[0]; i++){
+                    ((Value*)vv.v)[i].type = VAL_INT;
+                    ((Value*)vv.v)[i].v = malloc(sizeof(int64_t));
+                    *(int64_t*)((Value*)vv.v)[i].v = 0;
+                }
+
+                for (int d = 1; d < nDims; d++) {
+                    Value vvv;
+                    vvv.type = VAL_ARR;
+                    vvv.v = malloc(sizes[d] * sizeof(Value));
+                    for (int i = 0; i < sizes[d]; i++) {
+                        ((Value*)vvv.v)[i].type = VAL_ARR;
+                        ((Value*)vvv.v)[i].v = malloc(sizes[d - 1] * sizeof(Value));
+                        memcpy(((Value*)vvv.v)[i].v, vv.v, sizes[d - 1] * sizeof(Value));
+                    }
+                    vv = vvv;
+                }
+                // innermost array now becomes the outermost array
+                PUSH(vv);
                 pc += 3;
                 break;
             }
@@ -985,7 +1019,7 @@ int execute(uint8_t *code, size_t codeSize) {
                 break;
             }
             case STORE: {
-                DLOG("reached at store")
+                DLOG("reached at store\n")
                 Value loc = POP(), val = POP();
                 switch(val.type) {
                     case VAL_INT:

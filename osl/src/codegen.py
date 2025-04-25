@@ -160,6 +160,8 @@ def do_codegen(tree: AST):  # returns bytearray
                 e_(i)
             full_code.append(MAKE_ARRAY_DECL)
             full_code.extend(int(len(indices)).to_bytes(2, 'little'))
+            full_code.append(SET)
+            full_code.extend(int(arr.id).to_bytes(8, 'little'))
             return
         
         case CallFun(Variable(varName, i), args):
