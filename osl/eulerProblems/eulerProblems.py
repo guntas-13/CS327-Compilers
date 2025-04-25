@@ -1,5 +1,5 @@
-from osl_eval import e
-from osl_parser import parse, resolve
+from src.osl_eval import e
+from src.osl_parser import parse, resolve
 import time
 import sys
 from colorama import Fore, Style

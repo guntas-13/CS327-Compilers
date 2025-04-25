@@ -1,7 +1,6 @@
-from osl_parser import *
+from src.osl_parser import *
 from pprint import pprint
 from copy import deepcopy
-import time
 
 def e(tree: AST, env: Environment = None) -> int | float | bool:
     if env is None:

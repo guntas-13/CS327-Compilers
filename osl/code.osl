@@ -396,3 +396,29 @@
 // }
 // log fact(5);
 
+// var x := 5;
+// def F(a)
+// {
+//     return a;
+// }
+// F(5);
+
+// var x := 5;
+// def f(a)
+// {
+//     if (a > x)
+//     {
+//         return 5;
+//     }
+//     else
+//     {
+//         return 7;
+//     }
+// }
+// log f(10);
+
+def F()
+{
+    return 5;
+}
+F();

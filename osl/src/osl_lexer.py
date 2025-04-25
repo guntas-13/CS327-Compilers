@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from cosl import *
+from src.cosl import *
 
 def lex(s: str) -> Iterator[Token]:
     i = 0

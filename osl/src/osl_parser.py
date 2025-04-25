@@ -1,4 +1,4 @@
-from osl_lexer import *
+from src.osl_lexer import *
 from more_itertools import peekable
 
 cnt = 0
