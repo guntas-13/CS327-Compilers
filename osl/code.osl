@@ -405,7 +405,7 @@ def fib(n)
     return fib(n - 1) + fib(n - 2);
 }
 
-log fib(30);
+log fib(35);
 
 // var x := 5;
 // def F(a)
