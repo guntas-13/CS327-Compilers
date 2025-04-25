@@ -394,7 +394,18 @@
 //     }
 //     return n*fact(n-1);
 // }
-// log fact(5);
+// log fact(15);
+
+def fib(n)
+{
+    if (n <= 1)
+    {
+        return n;
+    }
+    return fib(n - 1) + fib(n - 2);
+}
+
+log fib(30);
 
 // var x := 5;
 // def F(a)
@@ -417,8 +428,8 @@
 // }
 // log f(10);
 
-def F()
-{
-    return 5;
-}
-F();
+// def F()
+// {
+//     return 5;
+// }
+// F();

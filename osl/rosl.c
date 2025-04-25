@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#define DLOG(x...) printf(x);
+#define DLOG(x...) // printf(x);
 
 typedef enum {
     VAL_CHAR,
@@ -382,16 +382,20 @@ int execute(uint8_t *code, size_t codeSize) {
                 v.v = malloc(sizeof(int64_t));
                 memcpy(v.v, &l, sizeof(int64_t));
                 unsigned int id = *(int64_t*)v.v;
-                //printf("get id: %lld\n",id);
+
+                // printf("get id: %lld\n",id);
+                
                 Value val; val.type = vals.tails[id]->type;
                 val.v = vals.tails[id]->location;
-                /*if(val.type == VAL_INT){
-                    printf("get val: %lld\n",*(int64_t*)val.v);
-                }else if(val.type == VAL_FLOAT){
-                    printf("get val: %f\n",*(float*)val.v);
-                }else if(val.type == VAL_CHAR){
-                    printf("get val: %c\n",*(char*)val.v);
-                }*/
+
+                // if(val.type == VAL_INT){
+                //     printf("get val: %lld\n",*(int64_t*)val.v);
+                // }else if(val.type == VAL_FLOAT){
+                //     printf("get val: %f\n",*(float*)val.v);
+                // }else if(val.type == VAL_CHAR){
+                //     printf("get val: %c\n",*(char*)val.v);
+                // }
+                
                 PUSH(val);
                 pc += 9;
                 break;
@@ -413,13 +417,13 @@ int execute(uint8_t *code, size_t codeSize) {
 
                 ValueType t = vv.type;
                 void* val = vv.v;
-                if(vv.type == VAL_INT){
-                    printf("set val: %lld\n",*(int64_t*)val);
-                }else if(vv.type == VAL_FLOAT){
-                    printf("set val: %f\n",*(float*)val);
-                }else if(vv.type == VAL_CHAR){
-                    printf("set val: %c\n",*(char*)val);
-                }
+                // if(vv.type == VAL_INT){
+                //     printf("set val: %lld\n",*(int64_t*)val);
+                // }else if(vv.type == VAL_FLOAT){
+                //     printf("set val: %f\n",*(float*)val);
+                // }else if(vv.type == VAL_CHAR){
+                //     printf("set val: %c\n",*(char*)val);
+                // }
 
                 if(vals.tails[id] == NULL) {
                     vals.heads[id] = (llNode*)malloc(sizeof(llNode));
@@ -802,21 +806,23 @@ int execute(uint8_t *code, size_t codeSize) {
                 if (top < 2) { fprintf(stderr, "Stack underflow on RETURN\n"); exit(1); }
                 Value returnValue = POP();
                 Value globalReturnAddress = POP();
+                // void* returnAddress = globalReturnAddress.v;
+                // printf("return address: %lld\n",*(int64_t*)returnAddress);
 
                 if (globalReturnAddress.type != VAL_INT) { 
                     fprintf(stderr, "Invalid global return address type\n"); 
                     exit(1); 
                 }
+                // FIXED!
                 while (sNodeTail > 0 && sNodeStack[sNodeTail - 1].scopeId == callScope) {
-                    vals.tails[sNodeStack[--sNodeTail].id] = vals.tails[sNodeStack[sNodeTail].id]->prev;
+                    unsigned int id = sNodeStack[--sNodeTail].id;
+                    if (vals.tails[id] != NULL) {
+                        vals.tails[id] = vals.tails[id]->prev;
+                    }
                 }
                 callScope--;
-
-                ValueType t = returnValue.type;
-                void* val = returnValue.v;
-                if(returnValue.type == VAL_INT){
-                    printf("return val: %lld\n",*(int64_t*)val);
-                }
+                // void* val = returnValue.v;
+                // printf("return val: %lld\n",*(int64_t*)val);
 
                 PUSH(returnValue);
 
