@@ -115,7 +115,12 @@ typedef enum {
     GET_FIELD       = 0x71,
     SET_FIELD       = 0x72,
 
+    // I/O Operations
     LOG             = 0x90,
+
+    // Function Operations
+    MAKE_FUNC       = 0x91,
+    MAKE_CLOSURE    = 0x92,
 
     // Array Operations
     MAKE_ARRAY      = 0x93,

@@ -2,6 +2,7 @@ import argparse
 from src.osl_eval import *
 from pprint import pprint
 import sys
+# from src.codegenLegacy import *
 from src.codegen import *
 import time
 sys.setrecursionlimit(100000000)
@@ -47,7 +48,7 @@ def main():
     elif args.run:
         parsed = parse(code)
         rcode = resolve(parsed)
-        # pprint(rcode)
+        pprint(rcode)
         start_time = time.time()
         result = e(rcode)
         end_time = time.time()

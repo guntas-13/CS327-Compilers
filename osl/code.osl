@@ -448,13 +448,19 @@
 // }
 // F();
 
+var x := 5;
 def f(a)
 {
-    def g(b)
+    var c := 0;
+    def g(b)        // g closes over a(id=3), c(id=4)
     {
-        return a + b;
+        def h(d)    // h closes over b(id=6), g(id=5), c(id=4), a(id=3)
+        {
+            return a + b + d + x;
+        }
+        return h;
     }
     return g;
 }
-var t := f(10)(5);
+var t := f(10)(5)(3);
 log t;

@@ -9,6 +9,7 @@ PUSH_FLOAT  = 0x05
 PUSH_DOUBLE = 0x06
 PUSH_NONE   = 0x07
 PUSH_BOOL   = 0x08
+# PUSH_ID     = 0x09
 
 POP         = 0x10
 DUP         = 0x11
@@ -59,8 +60,8 @@ GET_FIELD   = 0x71
 SET_FIELD   = 0x72
 
 LOG = 0x90
-MAKE_FUNC = 0x91
-MAKE_CLOSURE = 0x92
+NEWF = 0x91
+MAKEF = 0x92
 
 MAKE_ARRAY = 0x93
 ARRACC = 0x94
@@ -72,17 +73,14 @@ MAKE_ARRAY_DECL = 0x97
 
 
 
-# fnEntryDict = {}
+fnEntryDict = {}
 full_code = bytearray()
-def do_codegen(tree: AST, make_closure: bool = False, closure: List = None):  # returns bytearray
+def do_codegen(tree: AST):  # returns bytearray
     global full_code
-    # global fnEntryDict
+    global fnEntryDict
 
-    if closure is None:
-        closure = [[]]
-    
     def e_(tree: AST):
-        return do_codegen(tree, make_closure, closure)
+        return do_codegen(tree)
 
     match tree:
         case Program(decls):
@@ -107,8 +105,6 @@ def do_codegen(tree: AST, make_closure: bool = False, closure: List = None):  # 
         case Variable(varName, i):
             full_code.append(GET)
             full_code.extend(int(i).to_bytes(8, 'little'))
-            if make_closure:
-                closure[-1].append(i)
             return
         
         case Let(Variable(varName, i), e1):
@@ -118,59 +114,25 @@ def do_codegen(tree: AST, make_closure: bool = False, closure: List = None):  # 
                 full_code.append(PUSH_NONE)
             full_code.append(SET)
             full_code.extend(int(i).to_bytes(8, 'little'))
-            if make_closure:
-                closure[-1].append(i)
             return
         
         case Assign(Variable(varName, i), e1):
             e_(e1)
             full_code.append(SET)
             full_code.extend(int(i).to_bytes(8, 'little'))
-            if make_closure:
-                closure[-1].append(i)
             return
         
         case LetFun(Variable(varName, i), params, body):
             full_code.append(JUMP)
             full_code.extend(int(0).to_bytes(4, 'little'))
             entry_point = len(full_code)
-            # fnEntryDict[i] = entry_point
-            closure.append([])
+            fnEntryDict[i] = entry_point
             for param in params:
                 full_code.append(SET)
                 full_code.extend(int(param.id).to_bytes(8, 'little'))
-                closure[-1].append(param.id)
-            if make_closure:
-                closure[-1].append(i)
-             
-            
-            print(closure)
-            do_codegen(body, True, closure)
-            closure.pop()
-            
+            e_(body)
             body_pos = len(full_code)
             full_code[entry_point - 4: entry_point] = int(body_pos - entry_point).to_bytes(4, 'little')
-            
-            ctr = 0
-            if make_closure:
-                # traverse the closure and PUSH_INT <ID> for each
-                for cl in closure[::-1]:
-                    for i in cl:
-                        full_code.append(PUSH_INT)
-                        full_code.extend(int(i).to_bytes(8, 'little'))
-                        ctr += 1
-                        
-            full_code.append(PUSH_INT)
-            full_code.extend(int(ctr).to_bytes(8, 'little'))
-            full_code.append(MAKE_CLOSURE)
-                
-            full_code.append(PUSH_INT)
-            full_code.extend(int(entry_point).to_bytes(8, 'little')) # entry point
-            full_code.append(PUSH_INT)
-            full_code.extend(int(body_pos).to_bytes(8, 'little')) # exit point
-            full_code.append(MAKE_FUNC)
-            full_code.append(SET)
-            full_code.extend(int(i).to_bytes(8, 'little'))
             return
 
         case Arr(arr, size):
@@ -206,24 +168,16 @@ def do_codegen(tree: AST, make_closure: bool = False, closure: List = None):  # 
             full_code.extend(int(arr.id).to_bytes(8, 'little'))
             return
         
-        case CallFun(_) as F:
-            # full_code.append(PUSH_INT)
-            # full_code.extend(int(0).to_bytes(8, 'little'))  # Return address
-            # i_pos = len(full_code)
-            ctr = 1
-            while isinstance(F.fn, CallFun):
-                ctr += 1    
-                for arg in F.args[::-1]:
-                    e_(arg)
-                F = F.fn
-            for arg in F.args[::-1]:
+        case CallFun(Variable(varName, i), args):
+            full_code.append(PUSH_INT)
+            full_code.extend(int(0).to_bytes(8, 'little'))  # Return address
+            i_pos = len(full_code)
+            for arg in args[::-1]:
                 e_(arg)
-            full_code.append(GET)
-            full_code.extend(int(F.fn.id).to_bytes(8, 'little')) # call with ID
-            for _ in range(ctr):
-                full_code.append(CALL)
-            
-            # full_code[i_pos - 8 : i_pos] = int(len(full_code)).to_bytes(8, 'little')
+            full_code.append(CALL)
+            entry_point = fnEntryDict[i]
+            full_code.extend(int(entry_point).to_bytes(4, 'little'))
+            full_code[i_pos - 8 : i_pos] = int(len(full_code)).to_bytes(8, 'little')
             return
         
         case Statements(stmts):

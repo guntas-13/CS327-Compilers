@@ -1,36 +1,22 @@
 import dis
 
-def max(a, b):
-    if a > b:
-        return a
-    else:
-        return b
+# def counter():
+#     c = 0
+#     def inner():
+#         nonlocal c
+#         c += 1
+#         return c
+#     return inner
 
-def longest_palindromic_subsequence():
-    arr = [166, 144, 148, 121, 121, 172, 192, 50, 89, 57, 69, 192, 155, 156, 170, 106, 51, 129, 53, 101, 142, 64, 81, 51, 166, 76, 188, 74, 116, 121, 129, 94, 89, 115, 111, 106, 110, 120, 83, 76, 128, 103, 166, 138, 186, 183, 171, 59, 124, 109, 168, 104, 66, 162, 145, 123, 95, 88, 98, 142, 88, 135, 179, 57, 164, 53, 156, 110, 193, 64, 120, 183, 118, 100, 122, 124, 73, 106, 190, 100, 127, 194, 149, 60, 90, 110, 80, 74, 117, 122, 128, 126, 65, 171, 166, 119, 75, 78, 109, 143]
-    n = 100
-    dp = [[0 for _ in range(n)] for _ in range(n)]
+# print(dis.dis(counter))
+# print(dis.dis(counter()))
+# print(counter.__closure__)
 
-    i = 0
-    while i < n:
-        dp[i][i] = 1
-        i += 1
+def f(a):
+    def g(b):
+        def h(c):
+            return a + b + c
+        return h
+    return g
 
-    length = 2
-    while length <= n:
-        i = 0
-        while i < (n - length + 1):
-            j = i + length - 1
-            if arr[i] == arr[j]:
-                dp[i][j] = dp[i + 1][j - 1] + 2
-            else:
-                dp[i][j] = max(dp[i + 1][j], dp[i][j - 1])
-            i += 1
-        length += 1
-
-    return dp[0][n - 1]
-
-# arr = [8 ,3 ,2 ,7 ,3 ,4 ,5 ,8]
-# n = len(arr)
-# print(longest_palindromic_subsequence())
-print(dis.dis(longest_palindromic_subsequence))
+print(dis.dis(f))
