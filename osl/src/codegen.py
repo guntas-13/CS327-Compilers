@@ -72,11 +72,9 @@ MAKE_ARRAY_DECL = 0x97
 
 
 
-# fnEntryDict = {}
 full_code = bytearray()
 def do_codegen(tree: AST, make_closure: bool = False, closure: List = None):  # returns bytearray
     global full_code
-    # global fnEntryDict
 
     if closure is None:
         closure = [[]]
@@ -134,7 +132,6 @@ def do_codegen(tree: AST, make_closure: bool = False, closure: List = None):  # 
             full_code.append(JUMP)
             full_code.extend(int(0).to_bytes(4, 'little'))
             entry_point = len(full_code)
-            # fnEntryDict[i] = entry_point
             closure.append([])
             for param in params:
                 full_code.append(SET)
@@ -144,7 +141,7 @@ def do_codegen(tree: AST, make_closure: bool = False, closure: List = None):  # 
                 closure[-1].append(i)
              
             
-            print(closure)
+            # print(closure)
             do_codegen(body, True, closure)
             closure.pop()
             
@@ -297,7 +294,6 @@ def do_codegen(tree: AST, make_closure: bool = False, closure: List = None):  # 
 
 def codegen(t):
     global full_code
-    global fnEntryDict
     do_codegen(t)
     full_code.append(HALT)
     return full_code

@@ -448,19 +448,36 @@
 // }
 // F();
 
-var x := 5;
-def f(a)
+// var x := 5;
+// def f(a)
+// {
+//     var c := 0;
+//     def g(b)        // g closes over a(id=3), c(id=4)
+//     {
+//         def h(d)    // h closes over b(id=6), g(id=5), c(id=4), a(id=3)
+//         {
+//             return a + b + d + x;
+//         }
+//         return h;
+//     }
+//     return g;
+// }
+// var t := f(10)(5)(3);
+// log t;
+
+def counter()
 {
-    var c := 0;
-    def g(b)        // g closes over a(id=3), c(id=4)
+    var count := 0;
+    def inc()
     {
-        def h(d)    // h closes over b(id=6), g(id=5), c(id=4), a(id=3)
-        {
-            return a + b + d + x;
-        }
-        return h;
+        count := count + 1;
+        return count;
     }
-    return g;
+    return inc;
 }
-var t := f(10)(5)(3);
-log t;
+
+var c1 := counter();
+var c2 := counter();
+log c1();
+log c2();
+log c2();

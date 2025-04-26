@@ -838,7 +838,7 @@ int execute(uint8_t *code, size_t codeSize) {
                 }
                 // Value ret; ret.type = VAL_INT;
                 // ret.v = malloc(sizeof(int64_t));
-                // *(int64_t*)ret.v = pc + 5;
+                // *(int64_t*)ret.v = pc + 1; // -> CALL 1-byte
                 // PUSH(ret);
                 pc = addr;
                 DLOG("call to %d\n", addr)
