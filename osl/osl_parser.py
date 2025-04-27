@@ -90,6 +90,15 @@ def parse(s: str) -> AST:
                 # consume(OperatorToken, ")")
                 consume(OperatorToken, ";")
                 return PrintStmt(expr)
+            
+            case KeyWordToken("logN"):
+                # print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&7")
+                consume(KeyWordToken, "logN")
+                # consume(OperatorToken, "(")
+                expr = parse_expression()
+                # consume(OperatorToken, ")")
+                consume(OperatorToken, ";")
+                return PrintStmtN(expr)
 
             case KeyWordToken("while"):
                 consume(KeyWordToken, "while")
@@ -407,6 +416,9 @@ def resolve(program: AST, env: Environment = None) -> AST:
         
         case PrintStmt(expr):
             return PrintStmt(resolve_(expr))
+        
+        case PrintStmtN(expr):
+            return PrintStmtN(resolve_(expr))
         
         case ReturnStmt(expr):
             return ReturnStmt(resolve_(expr))

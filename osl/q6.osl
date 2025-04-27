@@ -1,0 +1,15 @@
+var height := 4;
+var i := 0;
+
+while (i < height) {
+    var j := 0;
+    var value := 1;
+    while (j <= i) {
+        log value;
+        log ' ';
+        value := value * (i - j) / (j + 1);
+        j := j + 1;
+    }
+    logN ' ';
+    i := i + 1;
+}

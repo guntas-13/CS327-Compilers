@@ -1,0 +1,27 @@
+var arr := [8,
+5,
+2,
+8,
+4,
+1,
+9,
+5,
+3];
+
+var n:= 9;
+
+var a := 0;
+var b := 0;
+
+var i:= 0;
+while(i<n){
+    if(arr[i] > a){
+        b := a;
+        a := arr[i];
+    }
+    else if(arr[i] > b && arr[i] != a){
+        b := arr[i];
+    }
+    i := i + 1;
+}
+logN b;

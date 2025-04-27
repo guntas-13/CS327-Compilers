@@ -11,15 +11,15 @@ with open("code.osl") as f:
 # print(code)
 # print()
 
-# for i, t in enumerate(lex(code)):
-#     print(f"{i}: {t}")
+for i, t in enumerate(lex(code)):
+    print(f"{i}: {t}")
 # print()
 parsed = parse(code)
-pprint(parsed)
+# pprint(parsed)
 rcode = resolve(parsed)
-pprint(rcode)
+# pprint(rcode)
 # print()
-print(e(rcode))
+e(rcode)
 # print(codegen(rcode))
 # bb = bytearray(codegen(rcode))
 # print(bb)

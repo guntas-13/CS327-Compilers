@@ -136,6 +136,10 @@ def e(tree: AST, env: Environment = None) -> int | float | bool:
             return None
         
         case PrintStmt(expr):
+            print(e_(expr), end="")
+            return
+        
+        case PrintStmtN(expr):
             print(e_(expr))
             return
         

@@ -17,7 +17,7 @@ def lex(s: str) -> Iterator[Token]:
                 i += 1
                 name = s[start:i]
 
-            if name in {"if", "else", "var", "def", "log", "return", "while"}:
+            if name in {"if", "else", "var", "def", "log", "return", "while", "logN"}:
                 yield KeyWordToken(name)
 
             else:

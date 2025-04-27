@@ -1,0 +1,54 @@
+var seed := 12345;
+var a := 11035;
+var c := 12345;
+var m := 2147483;
+
+def random() {
+    seed := (a * seed + c) % m;
+    return seed;
+}
+
+
+def getComputerChoice() {
+    var rand := random() % 3;
+    if (rand = 0) {
+        return 100;
+    } else if (rand = 1) {
+        return 101;
+    } else {
+        return 102;
+    }
+}
+
+def determineWinner(user, computer) {
+    if (user = computer) {
+        return "It's a tie!";
+    } else if ((user = 100 && computer = 101) ||
+               (user = 102 && computer = 100) ||
+               (user = 101 && computer = 102)) {
+        return "You win!";
+    } else {
+        return "Computer wins!";
+    }
+}
+
+
+var inp := [100, 101, 102, 100, 101, 102, 103];
+var playing := 1;
+var ii := 0;
+while (playing) {
+    var userChoice := inp[ii];
+    ii := ii + 1;
+    if (userChoice = 103) {
+        playing := 0;
+        logN "Thanks for playing!";
+    } else if (userChoice = 100 || userChoice = 101 || userChoice = 102) {
+        var computerChoice := getComputerChoice();
+        log "Computer chose: ";
+        logN computerChoice;
+        var result := determineWinner(userChoice, computerChoice);
+        logN result;
+    } else {
+        logN "Invalid choice. Please try again.";
+    }
+}

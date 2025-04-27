@@ -1,0 +1,25 @@
+var n := 10;
+var arr := [0, 1, 1, 0, 1, 0, 0, 0, 1, 1];
+
+var longest := 0;
+var lastIndex := 0;
+var i := 0;
+var current := -1;
+
+while (i < n) {
+    if (arr[i] != current) {
+        var length := i - lastIndex;
+        if (length > longest) {
+            longest := length;
+        }
+        lastIndex := i;
+        current := arr[i];
+    }
+    i := i + 1;
+}
+
+if (n - lastIndex > longest) {
+    longest := n - lastIndex;
+}
+
+logN longest;

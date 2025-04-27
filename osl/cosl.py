@@ -157,6 +157,11 @@ class Statements(AST):
 class PrintStmt(AST):
     expr: AST
     
+
+@dataclass
+class PrintStmtN(AST):
+    expr: AST
+    
 @dataclass
 class ReturnStmt(AST):
     expr: Optional[AST]
